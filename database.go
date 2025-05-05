@@ -1,24 +1,41 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
 )
 
+// SQLite3 database structure
 type SQLite3 struct {
-	db       *sql.DB
-	dbPath   string
-	maxConns int
-	timeout  time.Duration
+	db     *sql.DB
+	dbPath string
+	logger Logger
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
+// Logger logger interface
+type Logger interface {
+	Log(query string, args ...interface{})
+}
+
+// Config database configuration
+type Config struct {
+	DBPath       string
+	MaxOpenConns int           // maximum open connections
+	MaxIdleConns int           // maximum idle connections
+	BusyTimeout  time.Duration // busy timeout
+	EnableWAL    bool          // enable WAL mode
+	ForeignKeys  bool          // enable foreign keys
+	TraceLogger  Logger        // SQLite3 trace logger
 }
 
 func NewSQLite3DB(dbPath string) *SQLite3 {
 	// create and return SQLite3 database
 	return &SQLite3{
-		dbPath:   dbPath,
-		maxConns: 5,
-		timeout:  5 * time.Second,
+		dbPath: dbPath,
 	}
 }
 
@@ -29,9 +46,7 @@ func (s *SQLite3) Connect() error {
 		return fmt.Errorf("error opening SQLite3 database: %s", err)
 	}
 	// configure SQLite3 database pool
-	db.SetMaxOpenConns(s.maxConns)
 	db.SetMaxIdleConns(1)
-	db.SetConnMaxLifetime(s.timeout)
 	// verify SQLite3 database connection
 	if err := db.Ping(); err != nil {
 		return fmt.Errorf("error pinging SQLite3 database: %s", err)
