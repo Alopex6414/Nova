@@ -1,101 +1,67 @@
 package main
 
 import (
+	""
 	"context"
 	"database/sql"
-	"fmt"
+	"errors"
+	_ "github.com/mattn/go-sqlite3"
 	"time"
 )
 
-// SQLite3 database structure
+// define SQLite3 error type
+var (
+	ErrDBNotOpen      = errors.New("database not open")
+	ErrInvalidPointer = errors.New("invalid pointer type")
+	ErrNoRowsAffected = errors.New("no rows affected")
+	ErrLockTimeout    = errors.New("database lock timeout")
+)
+
+// SQLite3 database type structure
 type SQLite3 struct {
-	db     *sql.DB
-	dbPath string
-	logger Logger
-	ctx    context.Context
-	cancel context.CancelFunc
+	db        *sql.DB
+	ctx       context.Context
+	cancel    context.CancelFunc
+	config    Config
+	metrics   Metrics
+	stmtCache *StmtCache
 }
 
-// Logger logger interface
-type Logger interface {
-	Log(query string, args ...interface{})
-}
-
-// Config database configuration
+// Config database configure
 type Config struct {
-	DBPath       string
-	MaxOpenConns int           // maximum open connections
-	MaxIdleConns int           // maximum idle connections
-	BusyTimeout  time.Duration // busy timeout
-	EnableWAL    bool          // enable WAL mode
-	ForeignKeys  bool          // enable foreign keys
-	TraceLogger  Logger        // SQLite3 trace logger
+	Path             string
+	MaxConnections   int           `json:"max_connections"`
+	BusyTimeout      time.Duration `json:"busy_timeout"`
+	WALMode          bool          `json:"wal_mode"`
+	ForeignKeys      bool          `json:"foreign_keys"`
+	AutoVacuum       bool          `json:"auto_vacuum"`
+	CacheSize        int           `json:"cache_size"`
+	JournalMode      string        `json:"journal_mode"`
+	SyncMode         string        `json:"sync_mode"`
+	EnableTrace      bool          `json:"enable_trace"`
+	EnableMetrics    bool          `json:"enable_metrics"`
+	MaxRetryAttempts int           `json:"max_retry_attempts"`
 }
 
-func NewSQLite3DB(dbPath string) *SQLite3 {
-	// create and return SQLite3 database
-	return &SQLite3{
-		dbPath: dbPath,
-	}
+// Metrics database metrics
+type Metrics struct {
+	QueryCount     int64
+	WriteCount     int64
+	ErrorCount     int64
+	RetryCount     int64
+	AvgQueryTime   time.Duration
+	MaxQueryTime   time.Duration
+	LastBackupTime time.Time
 }
 
-func (s *SQLite3) Connect() error {
-	// connect to SQLite3 database
-	db, err := sql.Open("sqlite3", s.dbPath)
-	if err != nil {
-		return fmt.Errorf("error opening SQLite3 database: %s", err)
-	}
-	// configure SQLite3 database pool
-	db.SetMaxIdleConns(1)
-	// verify SQLite3 database connection
-	if err := db.Ping(); err != nil {
-		return fmt.Errorf("error pinging SQLite3 database: %s", err)
-	}
-	// return SQLite3 database
-	s.db = db
-	return nil
+// StmtCache pre-handling cache
+type StmtCache struct {
+	cache map[string]*sql.Stmt
 }
 
-func (s *SQLite3) Close() error {
-	// close SQLite3 database
-	if s.db != nil {
-		return s.db.Close()
-	}
-	return nil
-}
+// Hook function type
+type Hook func(operation string, query string, args []interface{})
 
-func (s *SQLite3) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return s.db.Exec(query, args...)
-}
-
-func (s *SQLite3) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return s.db.Query(query, args...)
-}
-
-func (s *SQLite3) QueryRow(query string, args ...interface{}) *sql.Row {
-	return s.db.QueryRow(query, args...)
-}
-
-func (s *SQLite3) BeginTx() (*sql.Tx, error) {
-	return s.db.Begin()
-}
-
-func (s *SQLite3) WithTransaction(fn func(*sql.Tx) error) error {
-	tx, err := s.BeginTx()
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			tx.Rollback()
-			panic(p)
-		}
-	}()
-
-	if err := fn(tx); err != nil {
-		tx.Rollback()
-		return err
-	}
-	return tx.Commit()
+func NewSQLite3DB(cfg Config) *SQLite3 {
+	return &SQLite3{}
 }
