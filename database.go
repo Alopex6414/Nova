@@ -1,10 +1,10 @@
 package main
 
 import (
-	""
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"time"
 )
@@ -62,6 +62,63 @@ type StmtCache struct {
 // Hook function type
 type Hook func(operation string, query string, args []interface{})
 
-func NewSQLite3DB(cfg Config) *SQLite3 {
-	return &SQLite3{}
+// DefaultConfig Initialization
+func DefaultConfig(path string) Config {
+	return Config{
+		Path:             path,
+		MaxConnections:   10,
+		BusyTimeout:      5 * time.Second,
+		WALMode:          true,
+		ForeignKeys:      true,
+		AutoVacuum:       true,
+		CacheSize:        -2000, // 2MB
+		JournalMode:      "wal",
+		SyncMode:         "normal",
+		MaxRetryAttempts: 3,
+	}
+}
+
+func NewSQLite3DB(cfg Config) (*SQLite3, error) {
+	// construct connection string
+	dsn := fmt.Sprintf(
+		"%s?_busy_timeout=%d&_foreign_keys=%d&_auto_vacuum=%d&_cache_size=%d&_journal_mode=%s&_sync=%s",
+		cfg.Path,
+		int(cfg.BusyTimeout.Seconds()*1000),
+		boolToInt(cfg.ForeignKeys),
+		boolToInt(cfg.AutoVacuum),
+		cfg.CacheSize,
+		cfg.JournalMode,
+		cfg.SyncMode,
+	)
+	if cfg.WALMode {
+		dsn += "&_journal_mode=WAL"
+	}
+	// connect to SQLite3 database
+	db, err := sql.Open("sqlite3", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("connect to SQLite3 database failed: %w", err)
+	}
+	// configure database pool
+	db.SetMaxOpenConns(cfg.MaxConnections)
+	db.SetMaxIdleConns(cfg.MaxConnections / 2)
+	db.SetConnMaxLifetime(30 * time.Minute)
+	db.SetConnMaxIdleTime(5 * time.Minute)
+	// cancel function
+	ctx, cancel := context.WithCancel(context.Background())
+	return &SQLite3{
+		db:     db,
+		ctx:    ctx,
+		cancel: cancel,
+		config: cfg,
+		stmtCache: &StmtCache{
+			cache: make(map[string]*sql.Stmt),
+		},
+	}, nil
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
