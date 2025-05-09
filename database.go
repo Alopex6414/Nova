@@ -121,9 +121,7 @@ func NewSQLite3DB(cfg Config) (*SQLite3, error) {
 	}, nil
 }
 
-// 核心增强功能实现
-
-// ExecWithRetry 带重试机制的 Exec
+// ExecWithRetry Exec with Re-try
 func (s *SQLite3) ExecWithRetry(query string, args ...interface{}) (sql.Result, error) {
 	var result sql.Result
 	var err error
@@ -141,10 +139,10 @@ func (s *SQLite3) ExecWithRetry(query string, args ...interface{}) (sql.Result, 
 		}
 		break
 	}
-	return nil, fmt.Errorf("执行失败（重试 %d 次）: %w", s.config.MaxRetryAttempts, err)
+	return nil, fmt.Errorf("execute failed (retry %d): %w", s.config.MaxRetryAttempts, err)
 }
 
-// QueryScan 查询并自动扫描到结构体切片
+// QueryScan query and auto scan structure slice
 func (s *SQLite3) QueryScan(dest interface{}, query string, args ...interface{}) error {
 	destVal := reflect.ValueOf(dest)
 	if destVal.Kind() != reflect.Ptr || destVal.IsNil() {
@@ -152,14 +150,13 @@ func (s *SQLite3) QueryScan(dest interface{}, query string, args ...interface{})
 	}
 	sliceVal := destVal.Elem()
 	if sliceVal.Kind() != reflect.Slice {
-		return fmt.Errorf("目标必须是指向切片的指针")
+		return fmt.Errorf("target must be a slice pointer")
 	}
 	rows, err := s.db.QueryContext(s.ctx, query, args...)
 	if err != nil {
-		return fmt.Errorf("查询失败: %w", err)
+		return fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
-
 	elementType := sliceVal.Type().Elem()
 	for rows.Next() {
 		elem := reflect.New(elementType).Elem()
@@ -167,14 +164,11 @@ func (s *SQLite3) QueryScan(dest interface{}, query string, args ...interface{})
 		if err != nil {
 			return err
 		}
-
 		if err := rows.Scan(fields...); err != nil {
-			return fmt.Errorf("扫描失败: %w", err)
+			return fmt.Errorf("scan failed: %w", err)
 		}
-
 		sliceVal.Set(reflect.Append(sliceVal, elem))
 	}
-
 	return rows.Err()
 }
 
