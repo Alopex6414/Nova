@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mattn/go-sqlite3"
+	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -240,6 +241,34 @@ func (s *SQLite3) Close() error {
 	return nil
 }
 
+// Transaction event handle
+func (s *SQLite3) Transaction(fn func(tx *sql.Tx) error) error {
+	// database start transaction
+	tx, err := s.db.BeginTx(s.ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	// raise exception and rollback
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		}
+	}()
+	// callback function for rollback
+	if err := fn(tx); err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("failed rollback: %v (original error: %w)", rbErr, err)
+		}
+		return err
+	}
+	// transaction commit
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed commit: %w", err)
+	}
+	return nil
+}
+
 // JSON type interface
 type JSON map[string]interface{}
 
@@ -260,4 +289,44 @@ func boolToInt(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+func Test() {
+	// create database configure
+	cfg := DefaultConfig("sqlite3.db")
+	cfg.EnableTrace = true
+	cfg.EnableMetrics = true
+	// create sqlite3 database
+	db, err := NewSQLite3DB(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	// define data structure
+	type User struct {
+		ID        int       `db:"id"`
+		Name      string    `db:"name"`
+		Metadata  JSON      `db:"metadata"`
+		CreatedAt time.Time `db:"created_at"`
+	}
+	// insert data
+	user := User{
+		Name:      "John Doe",
+		Metadata:  JSON{"department": "IT"},
+		CreatedAt: time.Now(),
+	}
+	// begin transaction
+	err = db.Transaction(func(tx *sql.Tx) error {
+		_, err := tx.Exec(
+			"INSERT INTO users (name, metadata, created_at) VALUES (?, ?, ?)",
+			user.Name,
+			user.Metadata,
+			user.CreatedAt,
+		)
+		return err
+	})
+	// error handle
+	if err != nil {
+		log.Fatal("failed to transaction:", err)
+	}
 }
