@@ -2,10 +2,23 @@ package main
 
 import (
 	"fmt"
-	"nova/database"
+	"net/http"
+	"nova/app"
+	"runtime"
 )
 
+func init() {
+	// start multi-cpu
+	core := runtime.NumCPU()
+	runtime.GOMAXPROCS(core)
+	// start debug pprof
+	go func() {
+		_ = http.ListenAndServe(":10080", nil)
+	}()
+}
+
 func main() {
-	fmt.Println("Hello World")
-	database.Test()
+	fmt.Println("The Nova Project")
+	nova := app.New()
+	nova.Start()
 }
