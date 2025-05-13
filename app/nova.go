@@ -26,6 +26,11 @@ func (nova *Nova) Start() {
 	novaService := router.Group("nova/v1")
 	{
 		novaService.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "hello Gin\n") })
+		// user management
+		novaService.POST("/user/:userId", handleCreatUser)
+		novaService.DELETE("/user/:userId", handleDeleteUser)
+		novaService.PATCH("/user/:userId", handleModifyUser)
+		novaService.GET("/user/:userId", handleQueryUser)
 	}
 	// start http service
 	server := &http.Server{
