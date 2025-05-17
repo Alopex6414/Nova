@@ -28,12 +28,12 @@ func (nova *Nova) Start() {
 		novaService.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "hello Gin\n") })
 		/* user management */
 		// userId related
-		novaService.POST("/user/userId", handleCreateUserId)
+		novaService.POST("/user/userId", HandleCreateUserId)
 		// user related
-		novaService.POST("/user/:userId", handleCreateUser)
-		novaService.DELETE("/user/:userId", handleDeleteUser)
-		novaService.PATCH("/user/:userId", handleModifyUser)
-		novaService.GET("/user/:userId", handleQueryUser)
+		novaService.POST("/user/:userId", HandleCreateUser)
+		novaService.DELETE("/user/:userId", HandleDeleteUser)
+		novaService.PATCH("/user/:userId", HandleModifyUser)
+		novaService.GET("/user/:userId", HandleQueryUser)
 	}
 	// start http service
 	server := &http.Server{

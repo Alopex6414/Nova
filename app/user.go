@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func handleCreateUserId(c *gin.Context) {
+func HandleCreateUserId(c *gin.Context) {
 	// create userId
 	var userId UserID
 	userId.UserId = uuid.New().String()
@@ -15,7 +15,7 @@ func handleCreateUserId(c *gin.Context) {
 	c.JSON(http.StatusCreated, userId)
 }
 
-func handleCreateUser(c *gin.Context) {
+func HandleCreateUser(c *gin.Context) {
 	var request User
 	// request body should bind json
 	err := c.ShouldBindJSON(&request)
@@ -30,14 +30,14 @@ func handleCreateUser(c *gin.Context) {
 	return
 }
 
-func handleDeleteUser(c *gin.Context) {
+func HandleDeleteUser(c *gin.Context) {
 	return
 }
 
-func handleModifyUser(c *gin.Context) {
+func HandleModifyUser(c *gin.Context) {
 	return
 }
 
-func handleQueryUser(c *gin.Context) {
+func HandleQueryUser(c *gin.Context) {
 	return
 }
