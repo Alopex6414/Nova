@@ -12,7 +12,7 @@ func HandleCreateUserId(c *gin.Context) {
 	userId.UserId = uuid.New().String()
 	// return response
 	c.Header("Content-Type", "application/json")
-	c.JSON(http.StatusCreated, userId)
+	c.JSON(http.StatusOK, userId)
 }
 
 func HandleCreateUser(c *gin.Context) {

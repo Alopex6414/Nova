@@ -25,7 +25,7 @@ func setupTestRouter() *gin.Engine {
 		// userId related
 		novaService.POST("/user/userId", HandleCreateUserId)
 		// user related
-		novaService.POST("/user/:userId", HandleCreateUser)
+		novaService.PUT("/user/:userId", HandleCreateUser)
 		novaService.DELETE("/user/:userId", HandleDeleteUser)
 		novaService.PATCH("/user/:userId", HandleModifyUser)
 		novaService.GET("/user/:userId", HandleQueryUser)
@@ -44,7 +44,7 @@ func TestHandleCreateUserId(t *testing.T) {
 	// Test Purpose: Test HandleCreateUserId create userId
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 201 Created Code
+	// 2. receive CreateUserId response with created userId by using 200 OK Code
 	---------------------------------------------------------------------------------*/
 	// start http test service
 	server, router := startTestService()
@@ -65,7 +65,7 @@ func TestHandleCreateUserId(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(response.UserId))
 }
@@ -76,8 +76,8 @@ func TestHandleCreateUser(t *testing.T) {
 	// Test Purpose: Test HandleCreateUser create user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 201 Created Code
-	// 3. send CreateUser request with user information by using POST method
+	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 3. send CreateUser request with user information by using PUT method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
 	// start http test service
@@ -100,7 +100,7 @@ func TestHandleCreateUser(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusCreated, wUserId.Code)
+	assert.Equal(t, http.StatusOK, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(resUserId.UserId))
 	/* create user */
@@ -121,7 +121,7 @@ func TestHandleCreateUser(t *testing.T) {
 	}
 	// request create user
 	wUser := httptest.NewRecorder()
-	reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId.UserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
