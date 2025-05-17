@@ -2,20 +2,31 @@ package app
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"net/http"
 )
 
-func handleCreatUser(c *gin.Context) {
-	var user User
+func handleCreateUserId(c *gin.Context) {
+	// create userId
+	var userId UserID
+	userId.UserId = uuid.New().String()
+	// return response
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusCreated, userId)
+}
+
+func handleCreateUser(c *gin.Context) {
+	var request User
 	// request body should bind json
-	err := c.ShouldBindJSON(&user)
+	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	// return response
+	var response = request
 	c.Header("Content-Type", "application/json")
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, response)
 	return
 }
 

@@ -1,5 +1,9 @@
 package app
 
+type UserID struct {
+	UserId string `json:"userId" yaml:"userId" binding:"required"`
+}
+
 type User struct {
 	UserId      string `json:"userId" yaml:"userId" binding:"required"`
 	Username    string `json:"username" yaml:"username" binding:"required"`
