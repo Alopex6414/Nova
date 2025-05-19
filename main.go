@@ -20,5 +20,6 @@ func init() {
 func main() {
 	fmt.Println("The Nova Project")
 	nova := app.New()
+	nova.Init()
 	nova.Start()
 }

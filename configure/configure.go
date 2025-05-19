@@ -7,34 +7,34 @@ import (
 )
 
 type Config struct {
-	file      string
-	configure NovaConfig
+	File      string
+	Configure NovaConfig
 }
 
 func NewConfig(file string) *Config {
 	return &Config{
-		file: file,
+		File: file,
 	}
 }
 
 func (c *Config) LoadConfig() (err error) {
-	return UnmarshalFrom(c.file, &c.configure)
+	return UnmarshalFrom(c.File, &c.Configure)
 }
 
 type NovaConfig struct {
 	FQDN     string      `json:"FQDN" yaml:"FQDN"`
 	IPv4Addr string      `json:"IPv4Addr" yaml:"IPv4Addr"`
 	IPv6Addr string      `json:"IPv6Addr" yaml:"IPv6Addr"`
-	Port     string      `json:"Port" yaml:"Port"`
+	Port     int         `json:"Port" yaml:"Port"`
 	TLS      TLSSettings `json:"TLSSettings" yaml:"TLSSettings"`
 }
 
 type TLSSettings struct {
-	TLSType    string `json:"tlsType" yaml:"tlsType"`
-	TLSVersion string `json:"tlsVersion" yaml:"tlsVersion"`
-	KeyFile    string `json:"keyFile" yaml:"keyFile"`
-	CertFile   string `json:"certFile" yaml:"certFile"`
-	CAFile     string `json:"caFile" yaml:"caFile"`
+	TLSType       string `json:"tlsType" yaml:"tlsType"`
+	TLSMinVersion string `json:"tlsMinVersion" yaml:"tlsMinVersion"`
+	KeyFile       string `json:"keyFile" yaml:"keyFile"`
+	CertFile      string `json:"certFile" yaml:"certFile"`
+	CAFile        string `json:"caFile" yaml:"caFile"`
 }
 
 func MarshalTo(file string, t interface{}) (err error) {

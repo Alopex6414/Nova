@@ -2,10 +2,10 @@
 "FQDN": "example.com" # host domain name
 "IPv4Addr": "192.168.1.5" # host IPv4 address
 "IPv6Addr": "2409:8a1e:1ad0:b9f0:e390:6404:a0ef:5660" # host IPv6 address
-"Port": 8080 # service port: <http>:80 <https>:443
+"Port": 8443 # service port: <http>:80 <https>:443
 "TLSSettings":
-  "tlsType": "non-tls" # <tls type>: <non-tls>, <oneway-tls> or <mutual-tls>
-  "tlsVersion": "1.3" # <tls version>: 1.2 or 1.3
-  "keyFile": "./cert/nova.key" # private key
-  "certFile": "./cert/nova.pem" # public certification
-  "caFile": "./cert/nova.crt" # CA certificate authority
+  "tlsType": "oneway-tls" # <tls type>: <non-tls>, <oneway-tls> or <mutual-tls>
+  "tlsMinVersion": "1.3" # <tls version>: 1.2 or 1.3
+  "keyFile": "./cert/server.key" # private key
+  "certFile": "./cert/server.pem" # public certification
+  "caFile": "./cert/ca.crt" # CA certificate authority
