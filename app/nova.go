@@ -11,12 +11,14 @@ import (
 )
 
 type Nova struct {
-	conf *Config
+	conf  *Config
+	cache *Cache
 }
 
 func New() *Nova {
 	return &Nova{
-		conf: NewConfig("./configure/nova_configure.yaml"),
+		conf:  NewConfig("./configure/nova_configure.yaml"),
+		cache: NewCache(),
 	}
 }
 
@@ -39,12 +41,12 @@ func (nova *Nova) Start() {
 		novaService.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "hello Gin\n") })
 		/* user management */
 		// userId related
-		novaService.POST("/user/userId", HandleCreateUserId)
+		novaService.POST("/user/userId", nova.HandleCreateUserId)
 		// user related
-		novaService.PUT("/user/:userId", HandleCreateUser)
-		novaService.DELETE("/user/:userId", HandleDeleteUser)
-		novaService.PATCH("/user/:userId", HandleModifyUser)
-		novaService.GET("/user/:userId", HandleQueryUser)
+		novaService.PUT("/user/:userId", nova.HandleCreateUser)
+		novaService.DELETE("/user/:userId", nova.HandleDeleteUser)
+		novaService.PATCH("/user/:userId", nova.HandleModifyUser)
+		novaService.GET("/user/:userId", nova.HandleQueryUser)
 	}
 	// enable tls settings
 	var tlsConfig *tls.Config

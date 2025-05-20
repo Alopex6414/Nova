@@ -13,3 +13,10 @@ type User struct {
 	Address     string `json:"address" yaml:"address" binding:"required"`
 	Company     string `json:"company" yaml:"company" binding:"required"`
 }
+
+type ProblemDetails struct {
+	Type   string `json:"type" yaml:"type"`
+	Title  string `json:"title" yaml:"title"`
+	Status int    `json:"status" yaml:"status"`
+	Cause  string `json:"cause" yaml:"cause"`
+}

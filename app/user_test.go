@@ -12,6 +12,8 @@ import (
 )
 
 func setupTestRouter() *gin.Engine {
+	// create Nova instance
+	nova := New()
 	// apply default Gin service
 	router := gin.Default()
 	// apply Gin logger & recovery middleware
@@ -23,12 +25,12 @@ func setupTestRouter() *gin.Engine {
 		novaService.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "hello Gin\n") })
 		/* user management */
 		// userId related
-		novaService.POST("/user/userId", HandleCreateUserId)
+		novaService.POST("/user/userId", nova.HandleCreateUserId)
 		// user related
-		novaService.PUT("/user/:userId", HandleCreateUser)
-		novaService.DELETE("/user/:userId", HandleDeleteUser)
-		novaService.PATCH("/user/:userId", HandleModifyUser)
-		novaService.GET("/user/:userId", HandleQueryUser)
+		novaService.PUT("/user/:userId", nova.HandleCreateUser)
+		novaService.DELETE("/user/:userId", nova.HandleDeleteUser)
+		novaService.PATCH("/user/:userId", nova.HandleModifyUser)
+		novaService.GET("/user/:userId", nova.HandleQueryUser)
 	}
 	return router
 }
