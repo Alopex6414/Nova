@@ -87,7 +87,7 @@ func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 		}
 		return false
 	}(userId)
-	if b {
+	if !b {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "User Not Found"
 		problemDetails.Type = "User"
