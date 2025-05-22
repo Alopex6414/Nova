@@ -43,7 +43,8 @@ func (nova *Nova) Start() {
 		// userId related
 		novaService.POST("/user/userId", nova.HandleCreateUserId)
 		// user related
-		novaService.PUT("/user/:userId", nova.HandleCreateUser)
+		novaService.POST("/user/:userId", nova.HandleCreateUser)
+		novaService.PUT("/user/:userId", nova.HandleReplaceUser)
 		novaService.DELETE("/user/:userId", nova.HandleDeleteUser)
 		novaService.PATCH("/user/:userId", nova.HandleModifyUser)
 		novaService.GET("/user/:userId", nova.HandleQueryUser)

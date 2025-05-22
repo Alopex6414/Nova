@@ -27,7 +27,8 @@ func setupTestRouter() *gin.Engine {
 		// userId related
 		novaService.POST("/user/userId", nova.HandleCreateUserId)
 		// user related
-		novaService.PUT("/user/:userId", nova.HandleCreateUser)
+		novaService.POST("/user/:userId", nova.HandleCreateUser)
+		novaService.PUT("/user/:userId", nova.HandleReplaceUser)
 		novaService.DELETE("/user/:userId", nova.HandleDeleteUser)
 		novaService.PATCH("/user/:userId", nova.HandleModifyUser)
 		novaService.GET("/user/:userId", nova.HandleQueryUser)
@@ -79,7 +80,7 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
 	// 2. receive CreateUserId response with created userId by using 200 OK Code
-	// 3. send CreateUser request with user information by using PUT method
+	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
 	// start http test service
@@ -123,7 +124,7 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	}
 	// request create user
 	wUser := httptest.NewRecorder()
-	reqUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -154,7 +155,7 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
 	// 2. receive CreateUserId response with created userId by using 200 OK Code
-	// 3. send CreateUser request with user information by using PUT method
+	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send DeleteUser request with userId by using DELETE method
 	// 6. receive DeleteUser request by using 204 No Content Code
@@ -200,7 +201,7 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	}
 	// request create user
 	wCreateUser := httptest.NewRecorder()
-	reqCreateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}

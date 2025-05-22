@@ -25,8 +25,27 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// check request body correctness
+	b, err := func(user User) (bool, error) {
+		// check userId format is UUID
+		err = uuid.Validate(user.UserId)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}(request)
+	if !b {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Bad Request"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusBadRequest
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusBadRequest, problemDetails)
+		return
+	}
 	// check user existence
-	b := func(userId string) bool {
+	b = func(userId string) bool {
 		// enable user cache read lock
 		nova.cache.userCache.mutex.RLock()
 		defer nova.cache.userCache.mutex.RUnlock()
@@ -121,5 +140,9 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 }
 
 func (nova *Nova) HandleQueryUser(c *gin.Context) {
+	return
+}
+
+func (nova *Nova) HandleReplaceUser(c *gin.Context) {
 	return
 }
