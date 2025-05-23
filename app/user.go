@@ -99,8 +99,27 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 	// extract userId from uri
 	userId := strings.ToLower(c.Param("userId"))
+	// request userId correctness
+	b, _ := func(userId string) (bool, error) {
+		// check userId format is UUID
+		err := uuid.Validate(userId)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}(userId)
+	if !b {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Bad Request"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusBadRequest
+		problemDetails.Cause = errors.New("userId format incorrect").Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusBadRequest, problemDetails)
+		return
+	}
 	// check user existence
-	b := func(userId string) bool {
+	b = func(userId string) bool {
 		// enable user cache read lock
 		nova.cache.userCache.mutex.RLock()
 		defer nova.cache.userCache.mutex.RUnlock()
@@ -146,6 +165,78 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 }
 
 func (nova *Nova) HandleQueryUser(c *gin.Context) {
+	// extract userId from uri
+	userId := strings.ToLower(c.Param("userId"))
+	// request userId correctness
+	b, _ := func(userId string) (bool, error) {
+		// check userId format is UUID
+		err := uuid.Validate(userId)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}(userId)
+	if !b {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Bad Request"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusBadRequest
+		problemDetails.Cause = errors.New("userId format incorrect").Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusBadRequest, problemDetails)
+		return
+	}
+	// check user existence
+	b = func(userId string) bool {
+		// enable user cache read lock
+		nova.cache.userCache.mutex.RLock()
+		defer nova.cache.userCache.mutex.RUnlock()
+		// search userId in data cache
+		for _, v := range nova.cache.userCache.userSet {
+			if v.UserId == userId {
+				return true
+			}
+		}
+		return false
+	}(userId)
+	if !b {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Not Found"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusNotFound
+		problemDetails.Cause = errors.New("user not found").Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusNotFound, problemDetails)
+		return
+	}
+	// query user from data cache
+	var response User
+	err := func(userId string, pUser *User) error {
+		// enable user cache write lock
+		nova.cache.userCache.mutex.RLock()
+		defer nova.cache.userCache.mutex.RUnlock()
+		// search & delete user from data cache
+		for k, v := range nova.cache.userCache.userSet {
+			if v.UserId == userId {
+				pUser = &nova.cache.userCache.userSet[k]
+				return nil
+			}
+		}
+		return errors.New("user not found")
+	}(userId, &response)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Not Found"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusNotFound
+		problemDetails.Cause = errors.New("user not found").Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusNotFound, problemDetails)
+		return
+	}
+	// return response
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusOK, response)
 	return
 }
 
