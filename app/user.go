@@ -210,20 +210,18 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 		return
 	}
 	// query user from data cache
-	var response User
-	err := func(userId string, pUser *User) error {
+	response, err := func(userId string) (User, error) {
 		// enable user cache write lock
 		nova.cache.userCache.mutex.RLock()
 		defer nova.cache.userCache.mutex.RUnlock()
 		// search & delete user from data cache
 		for k, v := range nova.cache.userCache.userSet {
 			if v.UserId == userId {
-				pUser = &nova.cache.userCache.userSet[k]
-				return nil
+				return nova.cache.userCache.userSet[k], nil
 			}
 		}
-		return errors.New("user not found")
-	}(userId, &response)
+		return User{}, errors.New("user not found")
+	}(userId)
 	if err != nil {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "Not Found"
@@ -240,7 +238,7 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 	return
 }
 
-func (nova *Nova) HandleReplaceUser(c *gin.Context) {
+func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 	var request User
 	// request body should bind json
 	err := c.ShouldBindJSON(&request)
