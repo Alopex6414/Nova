@@ -62,7 +62,7 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 			}
 		}
 		return false
-	}(request.UserId)
+	}(strings.ToLower(request.UserId))
 	if b {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "Conflict"
@@ -161,6 +161,105 @@ func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 }
 
 func (nova *Nova) HandleModifyUser(c *gin.Context) {
+	var request User
+	// request body should bind json
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Bad Request"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusBadRequest
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusBadRequest, problemDetails)
+		return
+	}
+	// check request body correctness
+	b, err := func(user User) (bool, error) {
+		// check userId format is UUID
+		err = uuid.Validate(user.UserId)
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}(request)
+	if !b {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Bad Request"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusBadRequest
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusBadRequest, problemDetails)
+		return
+	}
+	// check user existence
+	b = func(userId string) bool {
+		// enable user cache read lock
+		nova.cache.userCache.mutex.RLock()
+		defer nova.cache.userCache.mutex.RUnlock()
+		// search userId in data cache
+		for _, v := range nova.cache.userCache.userSet {
+			if v.UserId == userId {
+				return true
+			}
+		}
+		return false
+	}(strings.ToLower(request.UserId))
+	if b {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Conflict"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusConflict
+		problemDetails.Cause = errors.New("user already exists").Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusConflict, problemDetails)
+		return
+	}
+	// store modified user in data cache
+	response, err := func(user User) (User, error) {
+		// enable user cache write lock
+		nova.cache.userCache.mutex.Lock()
+		defer nova.cache.userCache.mutex.Unlock()
+		// replace user in data cache
+		for k, v := range nova.cache.userCache.userSet {
+			if v.UserId == user.UserId {
+				if user.Username != "" {
+					nova.cache.userCache.userSet[k].Username = user.Username
+				}
+				if user.Password != "" {
+					nova.cache.userCache.userSet[k].Password = user.Password
+				}
+				if user.PhoneNumber != "" {
+					nova.cache.userCache.userSet[k].PhoneNumber = user.PhoneNumber
+				}
+				if user.Email != "" {
+					nova.cache.userCache.userSet[k].Email = user.Email
+				}
+				if user.Address != "" {
+					nova.cache.userCache.userSet[k].Address = user.Address
+				}
+				if user.Company != "" {
+					nova.cache.userCache.userSet[k].Company = user.Company
+				}
+				return nova.cache.userCache.userSet[k], nil
+			}
+		}
+		return User{}, errors.New("user not found")
+	}(request)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Not Found"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusNotFound
+		problemDetails.Cause = errors.New("user not found").Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusNotFound, problemDetails)
+		return
+	}
+	// return response
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusOK, response)
 	return
 }
 
@@ -265,7 +364,7 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 			}
 		}
 		return false
-	}(request.UserId)
+	}(strings.ToLower(request.UserId))
 	if !b {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "Forbidden"
@@ -276,7 +375,7 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 		c.JSON(http.StatusForbidden, problemDetails)
 		return
 	}
-	// store created user in data cache
+	// store updated user in data cache
 	response := User{
 		UserId:      strings.ToLower(request.UserId),
 		Username:    request.Username,

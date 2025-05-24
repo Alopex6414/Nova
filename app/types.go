@@ -9,9 +9,9 @@ type User struct {
 	Username    string `json:"username" yaml:"username" binding:"required"`
 	Password    string `json:"password" yaml:"password" binding:"required"`
 	PhoneNumber string `json:"phone_number" yaml:"phone_number" binding:"required"`
-	Email       string `json:"email" yaml:"email" binding:"required"`
-	Address     string `json:"address" yaml:"address" binding:"required"`
-	Company     string `json:"company" yaml:"company" binding:"required"`
+	Email       string `json:"email" yaml:"email" binding:"omitempty"`
+	Address     string `json:"address" yaml:"address" binding:"omitempty"`
+	Company     string `json:"company" yaml:"company" binding:"omitempty"`
 }
 
 type ProblemDetails struct {
