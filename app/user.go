@@ -206,14 +206,14 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 		}
 		return false
 	}(strings.ToLower(request.UserId))
-	if b {
+	if !b {
 		var problemDetails ProblemDetails
-		problemDetails.Title = "Conflict"
+		problemDetails.Title = "Not Found"
 		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusConflict
-		problemDetails.Cause = errors.New("user already exists").Error()
+		problemDetails.Status = http.StatusNotFound
+		problemDetails.Cause = errors.New("user not found").Error()
 		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusConflict, problemDetails)
+		c.JSON(http.StatusNotFound, problemDetails)
 		return
 	}
 	// store modified user in data cache
