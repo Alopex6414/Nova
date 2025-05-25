@@ -468,6 +468,192 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, wDeleteUser.Code)
 }
 
+func BenchmarkNova_HandleDeleteUser(b *testing.B) {
+	/*--------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleDeleteUser
+	// Test Purpose: Benchmark HandleDeleteUser delete user
+	// Test Steps:
+	// 1. send CreateUserId request by using POST method
+	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 3. send CreateUser request with user information by using POST method
+	// 4. receive CreateUser response with user information by using 201 Created Code
+	// 5. send DeleteUser request with userId by using DELETE method
+	// 6. receive DeleteUser request by using 204 No Content Code
+	----------------------------------------------------------------------------------*/
+	// start http test service
+	server, router := startTestService()
+	defer server.Close()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		/* create userId */
+		// request content
+		url := server.URL + "/nova/v1/user/userId"
+		// request create userId
+		wUserId := httptest.NewRecorder()
+		reqUserId, err := http.NewRequest(http.MethodPost, url, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(wUserId, reqUserId)
+		// return response
+		var resUserId UserID
+		err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusOK, wUserId.Code)
+		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
+		assert.NoError(b, uuid.Validate(resUserId.UserId))
+		/* create user */
+		// request content
+		url = server.URL + "/nova/v1/user"
+		user := User{
+			UserId:      resUserId.UserId,
+			Username:    "alice",
+			Password:    "123456",
+			PhoneNumber: "+1412387",
+			Email:       "alice@gmail.com",
+			Address:     "No.5, Wall Street, New York, USA",
+			Company:     "Apple Inc.",
+		}
+		body, err := json.Marshal(user)
+		if err != nil {
+			b.Errorf("error marshal user: %v", err)
+		}
+		// request create user
+		wCreateUser := httptest.NewRecorder()
+		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		reqCreateUser.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(wCreateUser, reqCreateUser)
+		// return response
+		var resUser User
+		err = json.Unmarshal(wCreateUser.Body.Bytes(), &resUser)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusCreated, wCreateUser.Code)
+		assert.Equal(b, "application/json", wCreateUser.Header().Get("Content-Type"))
+		assert.Equal(b, user.UserId, resUser.UserId)
+		assert.Equal(b, user.Username, resUser.Username)
+		assert.Equal(b, user.Password, resUser.Password)
+		assert.Equal(b, user.PhoneNumber, resUser.PhoneNumber)
+		assert.Equal(b, user.Email, resUser.Email)
+		assert.Equal(b, user.Address, resUser.Address)
+		assert.Equal(b, user.Company, resUser.Company)
+		/* delete user */
+		// request content
+		url = server.URL + "/nova/v1/user"
+		// request delete user
+		wDeleteUser := httptest.NewRecorder()
+		reqDeleteUser, err := http.NewRequest(http.MethodDelete, url+"/"+resUserId.UserId, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(wDeleteUser, reqDeleteUser)
+		// validate response
+		assert.Equal(b, http.StatusNoContent, wDeleteUser.Code)
+	}
+}
+
+func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
+	/*--------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleDeleteUserParallel
+	// Test Purpose: Benchmark HandleDeleteUser delete user
+	// Test Steps:
+	// 1. send CreateUserId request by using POST method
+	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 3. send CreateUser request with user information by using POST method
+	// 4. receive CreateUser response with user information by using 201 Created Code
+	// 5. send DeleteUser request with userId by using DELETE method
+	// 6. receive DeleteUser request by using 204 No Content Code
+	----------------------------------------------------------------------------------*/
+	// start http test service
+	server, router := startTestService()
+	defer server.Close()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			/* create userId */
+			// request content
+			url := server.URL + "/nova/v1/user/userId"
+			// request create userId
+			wUserId := httptest.NewRecorder()
+			reqUserId, err := http.NewRequest(http.MethodPost, url, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(wUserId, reqUserId)
+			// return response
+			var resUserId UserID
+			err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusOK, wUserId.Code)
+			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
+			assert.NoError(b, uuid.Validate(resUserId.UserId))
+			/* create user */
+			// request content
+			url = server.URL + "/nova/v1/user"
+			user := User{
+				UserId:      resUserId.UserId,
+				Username:    "alice",
+				Password:    "123456",
+				PhoneNumber: "+1412387",
+				Email:       "alice@gmail.com",
+				Address:     "No.5, Wall Street, New York, USA",
+				Company:     "Apple Inc.",
+			}
+			body, err := json.Marshal(user)
+			if err != nil {
+				b.Errorf("error marshal user: %v", err)
+			}
+			// request create user
+			wCreateUser := httptest.NewRecorder()
+			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			reqCreateUser.Header.Set("Content-Type", "application/json")
+			router.ServeHTTP(wCreateUser, reqCreateUser)
+			// return response
+			var resUser User
+			err = json.Unmarshal(wCreateUser.Body.Bytes(), &resUser)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusCreated, wCreateUser.Code)
+			assert.Equal(b, "application/json", wCreateUser.Header().Get("Content-Type"))
+			assert.Equal(b, user.UserId, resUser.UserId)
+			assert.Equal(b, user.Username, resUser.Username)
+			assert.Equal(b, user.Password, resUser.Password)
+			assert.Equal(b, user.PhoneNumber, resUser.PhoneNumber)
+			assert.Equal(b, user.Email, resUser.Email)
+			assert.Equal(b, user.Address, resUser.Address)
+			assert.Equal(b, user.Company, resUser.Company)
+			/* delete user */
+			// request content
+			url = server.URL + "/nova/v1/user"
+			// request delete user
+			wDeleteUser := httptest.NewRecorder()
+			reqDeleteUser, err := http.NewRequest(http.MethodDelete, url+"/"+resUserId.UserId, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(wDeleteUser, reqDeleteUser)
+			// validate response
+			assert.Equal(b, http.StatusNoContent, wDeleteUser.Code)
+		}
+	})
+}
+
 func TestNova_HandleQueryUserUser(t *testing.T) {
 	/*--------------------------------------------------------------------------------
 	// Test Case: TestNova_HandleQueryUserUser
