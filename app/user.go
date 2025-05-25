@@ -413,3 +413,7 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 	return
 }
+
+func (nova *Nova) HandleCreateUserLogin(c *gin.Context) {
+	return
+}

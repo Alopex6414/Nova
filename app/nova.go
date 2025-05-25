@@ -48,6 +48,8 @@ func (nova *Nova) Start() {
 		novaService.DELETE("/user/:userId", nova.HandleDeleteUser)
 		novaService.PATCH("/user/:userId", nova.HandleModifyUser)
 		novaService.GET("/user/:userId", nova.HandleQueryUser)
+		// user login related
+		novaService.POST("/user/login/:userId", nova.HandleCreateUserLogin)
 	}
 	// enable tls settings
 	var tlsConfig *tls.Config
