@@ -73,6 +73,79 @@ func TestNova_HandleCreateUserId(t *testing.T) {
 	assert.NoError(t, uuid.Validate(response.UserId))
 }
 
+func BenchmarkNova_HandleCreateUserId(b *testing.B) {
+	/*--------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleCreateUserId
+	// Test Purpose: Benchmark HandleCreateUserId create userId
+	// Test Steps:
+	// 1. send CreateUserId request by using POST method
+	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	---------------------------------------------------------------------------------*/
+	// start http test service
+	server, router := startTestService()
+	defer server.Close()
+	// start benchmark test
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// request content
+		url := server.URL + "/nova/v1/user/userId"
+		// request create userId
+		w := httptest.NewRecorder()
+		request, err := http.NewRequest(http.MethodPost, url, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(w, request)
+		// return response
+		var response UserID
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusOK, w.Code)
+		assert.Equal(b, "application/json", w.Header().Get("Content-Type"))
+		assert.NoError(b, uuid.Validate(response.UserId))
+	}
+}
+
+func BenchmarkNova_HandleCreateUserIdParallel(b *testing.B) {
+	/*--------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleCreateUserIdParallel
+	// Test Purpose: Benchmark HandleCreateUserId create userId
+	// Test Steps:
+	// 1. send CreateUserId request by using POST method
+	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	---------------------------------------------------------------------------------*/
+	// start http test service
+	server, router := startTestService()
+	defer server.Close()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			// request content
+			url := server.URL + "/nova/v1/user/userId"
+			// request create userId
+			w := httptest.NewRecorder()
+			request, err := http.NewRequest(http.MethodPost, url, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(w, request)
+			// return response
+			var response UserID
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusOK, w.Code)
+			assert.Equal(b, "application/json", w.Header().Get("Content-Type"))
+			assert.NoError(b, uuid.Validate(response.UserId))
+		}
+	})
+}
+
 func TestNova_HandleCreateUser(t *testing.T) {
 	/*--------------------------------------------------------------------------------
 	// Test Case: TestNova_HandleCreateUser
