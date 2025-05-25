@@ -1087,6 +1087,246 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	assert.Equal(t, userNew.Company, resUpdateUser.Company)
 }
 
+func BenchmarkNova_HandleUpdateUser(b *testing.B) {
+	/*--------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleUpdateUser
+	// Test Purpose: Benchmark HandleUpdateUser update user
+	// Test Steps:
+	// 1. send CreateUserId request by using POST method
+	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 3. send CreateUser request with user information by using POST method
+	// 4. receive CreateUser response with user information by using 201 Created Code
+	// 5. send UpdateUser request with userId by using PUT method
+	// 6. receive UpdateUser request by using 200 OK Code
+	----------------------------------------------------------------------------------*/
+	// start http test service
+	server, router := startTestService()
+	defer server.Close()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		/* create userId */
+		// request content
+		url := server.URL + "/nova/v1/user/userId"
+		// request create userId
+		wUserId := httptest.NewRecorder()
+		reqUserId, err := http.NewRequest(http.MethodPost, url, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(wUserId, reqUserId)
+		// return response
+		var resUserId UserID
+		err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusOK, wUserId.Code)
+		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
+		assert.NoError(b, uuid.Validate(resUserId.UserId))
+		/* create user */
+		// request content
+		url = server.URL + "/nova/v1/user"
+		user := User{
+			UserId:      resUserId.UserId,
+			Username:    "alice",
+			Password:    "123456",
+			PhoneNumber: "+1412387",
+			Email:       "alice@gmail.com",
+			Address:     "No.5, Wall Street, New York, USA",
+			Company:     "Apple Inc.",
+		}
+		body, err := json.Marshal(user)
+		if err != nil {
+			b.Errorf("error marshal user: %v", err)
+		}
+		// request create user
+		wCreateUser := httptest.NewRecorder()
+		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		reqCreateUser.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(wCreateUser, reqCreateUser)
+		// return response
+		var resCreateUser User
+		err = json.Unmarshal(wCreateUser.Body.Bytes(), &resCreateUser)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusCreated, wCreateUser.Code)
+		assert.Equal(b, "application/json", wCreateUser.Header().Get("Content-Type"))
+		assert.Equal(b, user.UserId, resCreateUser.UserId)
+		assert.Equal(b, user.Username, resCreateUser.Username)
+		assert.Equal(b, user.Password, resCreateUser.Password)
+		assert.Equal(b, user.PhoneNumber, resCreateUser.PhoneNumber)
+		assert.Equal(b, user.Email, resCreateUser.Email)
+		assert.Equal(b, user.Address, resCreateUser.Address)
+		assert.Equal(b, user.Company, resCreateUser.Company)
+		/* update user */
+		// request content
+		url = server.URL + "/nova/v1/user"
+		userNew := User{
+			UserId:      resUserId.UserId,
+			Username:    "bob",
+			Password:    "888888",
+			PhoneNumber: "+2839822",
+			Email:       "bob@gmail.com",
+			Address:     "No.101, New Street, Los Angle, USA",
+			Company:     "Microsoft",
+		}
+		bodyNew, err := json.Marshal(userNew)
+		if err != nil {
+			b.Errorf("error marshal user: %v", err)
+		}
+		// request update user
+		wUpdateUser := httptest.NewRecorder()
+		reqUpdateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId.UserId, bytes.NewReader(bodyNew))
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(wUpdateUser, reqUpdateUser)
+		// return response
+		var resUpdateUser User
+		err = json.Unmarshal(wUpdateUser.Body.Bytes(), &resUpdateUser)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusOK, wUpdateUser.Code)
+		assert.Equal(b, "application/json", wUpdateUser.Header().Get("Content-Type"))
+		assert.Equal(b, userNew.UserId, resUpdateUser.UserId)
+		assert.Equal(b, userNew.Username, resUpdateUser.Username)
+		assert.Equal(b, userNew.Password, resUpdateUser.Password)
+		assert.Equal(b, userNew.PhoneNumber, resUpdateUser.PhoneNumber)
+		assert.Equal(b, userNew.Email, resUpdateUser.Email)
+		assert.Equal(b, userNew.Address, resUpdateUser.Address)
+		assert.Equal(b, userNew.Company, resUpdateUser.Company)
+	}
+}
+
+func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
+	/*--------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleUpdateUserParallel
+	// Test Purpose: Benchmark HandleUpdateUser update user
+	// Test Steps:
+	// 1. send CreateUserId request by using POST method
+	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 3. send CreateUser request with user information by using POST method
+	// 4. receive CreateUser response with user information by using 201 Created Code
+	// 5. send UpdateUser request with userId by using PUT method
+	// 6. receive UpdateUser request by using 200 OK Code
+	----------------------------------------------------------------------------------*/
+	// start http test service
+	server, router := startTestService()
+	defer server.Close()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			/* create userId */
+			// request content
+			url := server.URL + "/nova/v1/user/userId"
+			// request create userId
+			wUserId := httptest.NewRecorder()
+			reqUserId, err := http.NewRequest(http.MethodPost, url, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(wUserId, reqUserId)
+			// return response
+			var resUserId UserID
+			err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusOK, wUserId.Code)
+			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
+			assert.NoError(b, uuid.Validate(resUserId.UserId))
+			/* create user */
+			// request content
+			url = server.URL + "/nova/v1/user"
+			user := User{
+				UserId:      resUserId.UserId,
+				Username:    "alice",
+				Password:    "123456",
+				PhoneNumber: "+1412387",
+				Email:       "alice@gmail.com",
+				Address:     "No.5, Wall Street, New York, USA",
+				Company:     "Apple Inc.",
+			}
+			body, err := json.Marshal(user)
+			if err != nil {
+				b.Errorf("error marshal user: %v", err)
+			}
+			// request create user
+			wCreateUser := httptest.NewRecorder()
+			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			reqCreateUser.Header.Set("Content-Type", "application/json")
+			router.ServeHTTP(wCreateUser, reqCreateUser)
+			// return response
+			var resCreateUser User
+			err = json.Unmarshal(wCreateUser.Body.Bytes(), &resCreateUser)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusCreated, wCreateUser.Code)
+			assert.Equal(b, "application/json", wCreateUser.Header().Get("Content-Type"))
+			assert.Equal(b, user.UserId, resCreateUser.UserId)
+			assert.Equal(b, user.Username, resCreateUser.Username)
+			assert.Equal(b, user.Password, resCreateUser.Password)
+			assert.Equal(b, user.PhoneNumber, resCreateUser.PhoneNumber)
+			assert.Equal(b, user.Email, resCreateUser.Email)
+			assert.Equal(b, user.Address, resCreateUser.Address)
+			assert.Equal(b, user.Company, resCreateUser.Company)
+			/* update user */
+			// request content
+			url = server.URL + "/nova/v1/user"
+			userNew := User{
+				UserId:      resUserId.UserId,
+				Username:    "bob",
+				Password:    "888888",
+				PhoneNumber: "+2839822",
+				Email:       "bob@gmail.com",
+				Address:     "No.101, New Street, Los Angle, USA",
+				Company:     "Microsoft",
+			}
+			bodyNew, err := json.Marshal(userNew)
+			if err != nil {
+				b.Errorf("error marshal user: %v", err)
+			}
+			// request update user
+			wUpdateUser := httptest.NewRecorder()
+			reqUpdateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId.UserId, bytes.NewReader(bodyNew))
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(wUpdateUser, reqUpdateUser)
+			// return response
+			var resUpdateUser User
+			err = json.Unmarshal(wUpdateUser.Body.Bytes(), &resUpdateUser)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusOK, wUpdateUser.Code)
+			assert.Equal(b, "application/json", wUpdateUser.Header().Get("Content-Type"))
+			assert.Equal(b, userNew.UserId, resUpdateUser.UserId)
+			assert.Equal(b, userNew.Username, resUpdateUser.Username)
+			assert.Equal(b, userNew.Password, resUpdateUser.Password)
+			assert.Equal(b, userNew.PhoneNumber, resUpdateUser.PhoneNumber)
+			assert.Equal(b, userNew.Email, resUpdateUser.Email)
+			assert.Equal(b, userNew.Address, resUpdateUser.Address)
+			assert.Equal(b, userNew.Company, resUpdateUser.Company)
+		}
+	})
+}
+
 func TestNova_HandleModifyUser(t *testing.T) {
 	/*--------------------------------------------------------------------------------
 	// Test Case: TestNova_HandleModifyUser
