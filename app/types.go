@@ -4,6 +4,10 @@ type UserID struct {
 	UserId string `json:"userId" yaml:"userId" binding:"required"`
 }
 
+type UserName struct {
+	Username string `json:"username" yaml:"username" binding:"required"`
+}
+
 type User struct {
 	UserId      string `json:"userId" yaml:"userId" binding:"required"`
 	Username    string `json:"username" yaml:"username" binding:"required"`
@@ -12,6 +16,12 @@ type User struct {
 	Email       string `json:"email" yaml:"email" binding:"omitempty"`
 	Address     string `json:"address" yaml:"address" binding:"omitempty"`
 	Company     string `json:"company" yaml:"company" binding:"omitempty"`
+}
+
+type UserLogin struct {
+	UserId   string `json:"userId" yaml:"userId" binding:"required"`
+	Username string `json:"username" yaml:"username" binding:"required"`
+	Password string `json:"password" yaml:"password" binding:"required"`
 }
 
 type ProblemDetails struct {

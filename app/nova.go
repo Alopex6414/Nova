@@ -42,6 +42,7 @@ func (nova *Nova) Start() {
 		/* user management */
 		// userId related
 		novaService.POST("/user/userId", nova.HandleCreateUserId)
+		novaService.GET("/user/userId", nova.HandleQueryUserId)
 		// user related
 		novaService.POST("/user/:userId", nova.HandleCreateUser)
 		novaService.PUT("/user/:userId", nova.HandleUpdateUser)

@@ -15,6 +15,50 @@ func (nova *Nova) HandleCreateUserId(c *gin.Context) {
 	// return response
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusOK, userId)
+	return
+}
+
+func (nova *Nova) HandleQueryUserId(c *gin.Context) {
+	var userName UserName
+	// request body should bind json
+	err := c.ShouldBindJSON(&userName)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Bad Request"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusBadRequest
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusBadRequest, problemDetails)
+		return
+	}
+	// query userId from data cache
+	userId, err := func(userName UserName) (UserID, error) {
+		// enable user cache write lock
+		nova.cache.userCache.mutex.RLock()
+		defer nova.cache.userCache.mutex.RUnlock()
+		// search & delete user from data cache
+		for k, v := range nova.cache.userCache.userSet {
+			if v.Username == userName.Username {
+				return UserID{UserId: nova.cache.userCache.userSet[k].UserId}, nil
+			}
+		}
+		return UserID{}, errors.New("userId not found")
+	}(userName)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Not Found"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusNotFound
+		problemDetails.Cause = errors.New("userId not found").Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusNotFound, problemDetails)
+		return
+	}
+	// return response
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusOK, userId)
+	return
 }
 
 func (nova *Nova) HandleCreateUser(c *gin.Context) {
