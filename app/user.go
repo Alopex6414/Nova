@@ -14,7 +14,7 @@ func (nova *Nova) HandleCreateUserId(c *gin.Context) {
 	userId.UserId = uuid.New().String()
 	// return response
 	c.Header("Content-Type", "application/json")
-	c.JSON(http.StatusOK, userId)
+	c.JSON(http.StatusCreated, userId)
 	return
 }
 

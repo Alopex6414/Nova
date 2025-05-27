@@ -48,7 +48,7 @@ func TestNova_HandleCreateUserId(t *testing.T) {
 	// Test Purpose: Test HandleCreateUserId create userId
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
 	// start http test service
 	server, router := startTestService()
@@ -69,7 +69,7 @@ func TestNova_HandleCreateUserId(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(response.UserId))
 }
@@ -80,7 +80,7 @@ func BenchmarkNova_HandleCreateUserId(b *testing.B) {
 	// Test Purpose: Benchmark HandleCreateUserId create userId
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
 	// start http test service
 	server, router := startTestService()
@@ -104,7 +104,7 @@ func BenchmarkNova_HandleCreateUserId(b *testing.B) {
 			b.Errorf("error unmarshal response: %v", err)
 		}
 		// validate response
-		assert.Equal(b, http.StatusOK, w.Code)
+		assert.Equal(b, http.StatusCreated, w.Code)
 		assert.Equal(b, "application/json", w.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(response.UserId))
 	}
@@ -116,7 +116,7 @@ func BenchmarkNova_HandleCreateUserIdParallel(b *testing.B) {
 	// Test Purpose: Benchmark HandleCreateUserId create userId (Parallel)
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
 	// start http test service
 	server, router := startTestService()
@@ -140,7 +140,7 @@ func BenchmarkNova_HandleCreateUserIdParallel(b *testing.B) {
 				b.Errorf("error unmarshal response: %v", err)
 			}
 			// validate response
-			assert.Equal(b, http.StatusOK, w.Code)
+			assert.Equal(b, http.StatusCreated, w.Code)
 			assert.Equal(b, "application/json", w.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(response.UserId))
 		}
@@ -153,7 +153,7 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	// Test Purpose: Test HandleQueryUserId query userId
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send QueryUserId request with userName information by using GET method
@@ -179,7 +179,7 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusOK, wUserId.Code)
+	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(resUserId.UserId))
 	/* create user */
@@ -253,122 +253,13 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	assert.Equal(t, resUserId.UserId, resUserId2.UserId)
 }
 
-func BenchmarkNova_HandleQueryUserId(b *testing.B) {
-	/*--------------------------------------------------------------------------------
-	// Test Case: BenchmarkNova_HandleQueryUserId
-	// Test Purpose: Benchmark HandleQueryUserId query userId
-	// Test Steps:
-	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
-	// 3. send CreateUser request with user information by using POST method
-	// 4. receive CreateUser response with user information by using 201 Created Code
-	// 5. send QueryUserId request with userName information by using GET method
-	// 6. receive QueryUserId response with userId information by using 200 Created Code
-	---------------------------------------------------------------------------------*/
-	// start http test service
-	server, router := startTestService()
-	defer server.Close()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		/* create userId */
-		// request content
-		url := server.URL + "/nova/v1/user/userId"
-		// request create userId
-		wUserId := httptest.NewRecorder()
-		reqUserId, err := http.NewRequest(http.MethodPost, url, nil)
-		if err != nil {
-			b.Errorf("error creating request: %v", err)
-		}
-		router.ServeHTTP(wUserId, reqUserId)
-		// return response
-		var resUserId UserID
-		err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
-		if err != nil {
-			b.Errorf("error unmarshal response: %v", err)
-		}
-		// validate response
-		assert.Equal(b, http.StatusOK, wUserId.Code)
-		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-		assert.NoError(b, uuid.Validate(resUserId.UserId))
-		/* create user */
-		// request content
-		url = server.URL + "/nova/v1/user"
-		user := User{
-			UserId:      resUserId.UserId,
-			Username:    "alice",
-			Password:    "123456",
-			PhoneNumber: "+1412387",
-			Email:       "alice@gmail.com",
-			Address:     "No.5, Wall Street, New York, USA",
-			Company:     "Apple Inc.",
-		}
-		body, err := json.Marshal(user)
-		if err != nil {
-			b.Errorf("error marshal user: %v", err)
-		}
-		// request create user
-		wUser := httptest.NewRecorder()
-		reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
-		if err != nil {
-			b.Errorf("error creating request: %v", err)
-		}
-		reqUser.Header.Set("Content-Type", "application/json")
-		router.ServeHTTP(wUser, reqUser)
-		// return response
-		var resUser User
-		err = json.Unmarshal(wUser.Body.Bytes(), &resUser)
-		if err != nil {
-			b.Errorf("error unmarshal response: %v", err)
-		}
-		// validate response
-		assert.Equal(b, http.StatusCreated, wUser.Code)
-		assert.Equal(b, "application/json", wUser.Header().Get("Content-Type"))
-		assert.Equal(b, user.UserId, resUser.UserId)
-		assert.Equal(b, user.Username, resUser.Username)
-		assert.Equal(b, user.Password, resUser.Password)
-		assert.Equal(b, user.PhoneNumber, resUser.PhoneNumber)
-		assert.Equal(b, user.Email, resUser.Email)
-		assert.Equal(b, user.Address, resUser.Address)
-		assert.Equal(b, user.Company, resUser.Company)
-		/* query userId */
-		// request content
-		url = server.URL + "/nova/v1/user/userId"
-		userName := UserName{
-			Username: "alice",
-		}
-		bodyNew, err := json.Marshal(userName)
-		if err != nil {
-			b.Errorf("error marshal username: %v", err)
-		}
-		// request create user
-		wUser2 := httptest.NewRecorder()
-		reqUser2, err := http.NewRequest(http.MethodGet, url, bytes.NewReader(bodyNew))
-		if err != nil {
-			b.Errorf("error creating request: %v", err)
-		}
-		reqUser2.Header.Set("Content-Type", "application/json")
-		router.ServeHTTP(wUser2, reqUser2)
-		// return response
-		var resUserId2 UserID
-		err = json.Unmarshal(wUser2.Body.Bytes(), &resUserId2)
-		if err != nil {
-			b.Errorf("error unmarshal response: %v", err)
-		}
-		// validate response
-		assert.Equal(b, http.StatusOK, wUser2.Code)
-		assert.Equal(b, "application/json", wUser2.Header().Get("Content-Type"))
-		assert.NoError(b, uuid.Validate(resUserId2.UserId))
-		assert.Equal(b, resUserId.UserId, resUserId2.UserId)
-	}
-}
-
 func TestNova_HandleCreateUser(t *testing.T) {
 	/*--------------------------------------------------------------------------------
 	// Test Case: TestNova_HandleCreateUser
 	// Test Purpose: Test HandleCreateUser create user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
@@ -392,7 +283,7 @@ func TestNova_HandleCreateUser(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusOK, wUserId.Code)
+	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(resUserId.UserId))
 	/* create user */
@@ -443,7 +334,7 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 	// Test Purpose: Benchmark HandleCreateUser create user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
@@ -469,7 +360,7 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 			b.Errorf("error unmarshal response: %v", err)
 		}
 		// validate response
-		assert.Equal(b, http.StatusOK, wUserId.Code)
+		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(resUserId.UserId))
 		/* create user */
@@ -521,7 +412,7 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 	// Test Purpose: Benchmark HandleCreateUser create user (Parallel)
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
@@ -548,7 +439,7 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 				b.Errorf("error unmarshal response: %v", err)
 			}
 			// validate response
-			assert.Equal(b, http.StatusOK, wUserId.Code)
+			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(resUserId.UserId))
 			/* create user */
@@ -601,7 +492,7 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	// Test Purpose: Test HandleDeleteUser delete user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send DeleteUser request with userId by using DELETE method
@@ -627,7 +518,7 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusOK, wUserId.Code)
+	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(resUserId.UserId))
 	/* create user */
@@ -690,7 +581,7 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 	// Test Purpose: Benchmark HandleDeleteUser delete user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send DeleteUser request with userId by using DELETE method
@@ -718,7 +609,7 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 			b.Errorf("error unmarshal response: %v", err)
 		}
 		// validate response
-		assert.Equal(b, http.StatusOK, wUserId.Code)
+		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(resUserId.UserId))
 		/* create user */
@@ -782,7 +673,7 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 	// Test Purpose: Benchmark HandleDeleteUser delete user (Parallel)
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send DeleteUser request with userId by using DELETE method
@@ -811,7 +702,7 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 				b.Errorf("error unmarshal response: %v", err)
 			}
 			// validate response
-			assert.Equal(b, http.StatusOK, wUserId.Code)
+			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(resUserId.UserId))
 			/* create user */
@@ -876,7 +767,7 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	// Test Purpose: Test HandleQueryUserUser query user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send QueryUser request with userId by using GET method
@@ -902,7 +793,7 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusOK, wUserId.Code)
+	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(resUserId.UserId))
 	/* create user */
@@ -979,7 +870,7 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 	// Test Purpose: Benchmark HandleQueryUserUser query user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send QueryUser request with userId by using GET method
@@ -1007,7 +898,7 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 			b.Errorf("error unmarshal response: %v", err)
 		}
 		// validate response
-		assert.Equal(b, http.StatusOK, wUserId.Code)
+		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(resUserId.UserId))
 		/* create user */
@@ -1085,7 +976,7 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 	// Test Purpose: Benchmark HandleQueryUserUser query user (Parallel)
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send QueryUser request with userId by using GET method
@@ -1114,7 +1005,7 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 				b.Errorf("error unmarshal response: %v", err)
 			}
 			// validate response
-			assert.Equal(b, http.StatusOK, wUserId.Code)
+			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(resUserId.UserId))
 			/* create user */
@@ -1193,7 +1084,7 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	// Test Purpose: Test HandleUpdateUser update user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send UpdateUser request with userId by using PUT method
@@ -1219,7 +1110,7 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusOK, wUserId.Code)
+	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(resUserId.UserId))
 	/* create user */
@@ -1309,7 +1200,7 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 	// Test Purpose: Benchmark HandleUpdateUser update user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send UpdateUser request with userId by using PUT method
@@ -1337,7 +1228,7 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 			b.Errorf("error unmarshal response: %v", err)
 		}
 		// validate response
-		assert.Equal(b, http.StatusOK, wUserId.Code)
+		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(resUserId.UserId))
 		/* create user */
@@ -1428,7 +1319,7 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 	// Test Purpose: Benchmark HandleUpdateUser update user (Parallel)
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send UpdateUser request with userId by using PUT method
@@ -1457,7 +1348,7 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 				b.Errorf("error unmarshal response: %v", err)
 			}
 			// validate response
-			assert.Equal(b, http.StatusOK, wUserId.Code)
+			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(resUserId.UserId))
 			/* create user */
@@ -1549,7 +1440,7 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	// Test Purpose: Test HandleModifyUser modify user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send ModifyUser request with userId by using PATCH method
@@ -1575,7 +1466,7 @@ func TestNova_HandleModifyUser(t *testing.T) {
 		t.Errorf("error unmarshal response: %v", err)
 	}
 	// validate response
-	assert.Equal(t, http.StatusOK, wUserId.Code)
+	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(resUserId.UserId))
 	/* create user */
@@ -1663,7 +1554,7 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 	// Test Purpose: Benchmark HandleModifyUser modify user
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send ModifyUser request with userId by using PATCH method
@@ -1691,7 +1582,7 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 			b.Errorf("error unmarshal response: %v", err)
 		}
 		// validate response
-		assert.Equal(b, http.StatusOK, wUserId.Code)
+		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(resUserId.UserId))
 		/* create user */
@@ -1780,7 +1671,7 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 	// Test Purpose: Benchmark HandleModifyUser modify user (Parallel)
 	// Test Steps:
 	// 1. send CreateUserId request by using POST method
-	// 2. receive CreateUserId response with created userId by using 200 OK Code
+	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	// 5. send ModifyUser request with userId by using PATCH method
@@ -1809,7 +1700,7 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 				b.Errorf("error unmarshal response: %v", err)
 			}
 			// validate response
-			assert.Equal(b, http.StatusOK, wUserId.Code)
+			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(resUserId.UserId))
 			/* create user */
