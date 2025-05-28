@@ -10,13 +10,11 @@ import (
 	"time"
 )
 
-// RedisClient
 type RedisClient struct {
 	client *redis.Client
 	config *RedisConfig
 }
 
-// RedisConfig
 type RedisConfig struct {
 	Addr         string
 	Password     string
@@ -130,7 +128,6 @@ func generateToken() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-// NewRedisClient
 func NewRedisClient(cfg *RedisConfig) (*RedisClient, error) {
 	// get configure address and max retry times
 	if cfg.Addr == "" {

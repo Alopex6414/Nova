@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"modernc.org/sqlite"
 	"reflect"
 	"strings"
@@ -13,7 +12,6 @@ import (
 	"time"
 )
 
-// Config
 type Config struct {
 	MaxOpenConns    int
 	Debug           bool
@@ -35,7 +33,7 @@ type SqliteDB struct {
 	migration *MigrationMgr
 }
 
-// Performance Metrics
+// Metrics Performance
 type Metrics struct {
 	QueryCount       int64
 	WriteCount       int64
@@ -46,7 +44,7 @@ type Metrics struct {
 	ConnectionsInUse int
 }
 
-// Migration Management
+// MigrationMgr Migration Management
 type MigrationMgr struct {
 	mu         sync.Mutex
 	versions   map[int]func(tx *sql.Tx) error
@@ -113,7 +111,7 @@ func (s *SqliteDB) initDatabase(ctx context.Context) error {
 	return nil
 }
 
-// query database with retry
+// QueryWithRetry query database with retry
 func (s *SqliteDB) QueryWithRetry(ctx context.Context, maxRetries int, query string, args ...interface{}) (*sql.Rows, error) {
 	for i := 0; ; i++ {
 		rows, err := s.Query(ctx, query, args...)
@@ -125,7 +123,7 @@ func (s *SqliteDB) QueryWithRetry(ctx context.Context, maxRetries int, query str
 	}
 }
 
-// insert structure
+// InsertStruct insert structure
 func (s *SqliteDB) InsertStruct(ctx context.Context, table string, data interface{}) (int64, error) {
 	// structure reflect
 	rv := reflect.ValueOf(data)
@@ -169,7 +167,7 @@ func (s *SqliteDB) monitor() {
 	}
 }
 
-// migration methods
+// AddMigration migration methods
 func (s *SqliteDB) AddMigration(version int, fn func(tx *sql.Tx) error) {
 	s.migration.mu.Lock()
 	defer s.migration.mu.Unlock()
@@ -192,14 +190,14 @@ func isRetryableError(err error) bool {
 	return false
 }
 
-// health check for connection
+// CheckConnection health check for connection
 func (s *SqliteDB) CheckConnection() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	return s.db.PingContext(ctx)
 }
 
-// query with performance metrics
+// QueryWithMetrics query with performance metrics
 func (s *SqliteDB) QueryWithMetrics(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	start := time.Now()
 	defer func() {
