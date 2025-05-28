@@ -211,3 +211,81 @@ func (s *SqliteDB) QueryWithMetrics(ctx context.Context, query string, args ...i
 	}()
 	return s.Query(ctx, query, args...)
 }
+
+func (s *SqliteDB) createMigrationTable(ctx context.Context) error {
+	_, err := s.db.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS migrations (
+			version INTEGER PRIMARY KEY,
+			applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		);
+	`)
+	return err
+}
+
+func (s *SqliteDB) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	start := time.Now()
+	res, err := s.db.ExecContext(ctx, query, args...)
+	s.recordMetrics(start, err, "exec")
+	return res, err
+}
+
+func (s *SqliteDB) Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	start := time.Now()
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	s.recordMetrics(start, err, "query")
+	return rows, err
+}
+
+// Metrics recording with thread-safe updates
+func (s *SqliteDB) recordMetrics(start time.Time, err error, op string) {
+	if !s.config.Debug {
+		return
+	}
+	dur := time.Since(start)
+	s.rwLock.Lock()
+	defer s.rwLock.Unlock()
+	s.metrics.QueryCount++
+	if op == "exec" {
+		s.metrics.WriteCount++
+	}
+	// Update average using cumulative moving average
+	total := s.metrics.QueryCount
+	s.metrics.AvgQueryTime = (s.metrics.AvgQueryTime*time.Duration(total-1) + dur) / time.Duration(total)
+	if dur > s.metrics.MaxQueryTime {
+		s.metrics.MaxQueryTime = dur
+	}
+	if err != nil {
+		s.metrics.LastError = err
+		s.metrics.LastErrorTime = time.Now()
+	}
+}
+
+// WithTransaction Transaction helper with automatic rollback/commit
+func (s *SqliteDB) WithTransaction(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		}
+	}()
+
+	if err := fn(tx); err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("rollback failed: %v (original error: %w)", rbErr, err)
+		}
+		return err
+	}
+	return tx.Commit()
+}
+
+// GetMetrics Get current metrics snapshot
+func (s *SqliteDB) GetMetrics() Metrics {
+	s.rwLock.RLock()
+	defer s.rwLock.RUnlock()
+	return *s.metrics
+}
