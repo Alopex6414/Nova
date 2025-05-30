@@ -133,6 +133,11 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		defer nova.cache.userCache.mutex.Unlock()
 		// append user in data cache
 		nova.cache.userCache.userSet = append(nova.cache.userCache.userSet, user)
+		// store data cache in database
+		_, err := nova.db.CreateUser(&user)
+		if err != nil {
+			return
+		}
 	}(response)
 	// return response
 	c.Header("Content-Type", "application/json")

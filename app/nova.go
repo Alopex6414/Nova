@@ -3,11 +3,9 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	. "nova/configure"
-	. "nova/database"
 	"os"
 	"strconv"
 )
@@ -15,7 +13,7 @@ import (
 type Nova struct {
 	conf  *Config
 	cache *Cache
-	db    *SQLiteDB
+	db    *DB
 }
 
 func New() *Nova {
@@ -32,23 +30,14 @@ func (nova *Nova) Init() {
 		panic(err)
 	}
 	// create database
-	nova.db, err = NewSQLiteDB("file:nova.db?cache=shared")
+	nova.db, err = NewDB("file:nova.db?cache=shared")
 	if err != nil {
 		panic(err)
 	}
-	defer nova.db.Close()
-	createUsersTable := `
-	CREATE TABLE IF NOT EXISTS Users (
-		UserId TEXT PRIMARY KEY NOT NULL,
-		Username TEXT NOT NULL,
-		Password TEXT NOT NULL,
-		PhoneNumber TEXT NOT NULL,
-		Email TEXT NOT NULL,
-		Address TEXT NOT NULL,
-		Company TEXT NOT NULL
-	);`
-	if _, err := nova.db.Exec(createUsersTable); err != nil {
-		panic(fmt.Errorf("create table failed: %w", err))
+	// create table
+	err = nova.db.CreateTables()
+	if err != nil {
+		panic(err)
 	}
 }
 

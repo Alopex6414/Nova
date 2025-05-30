@@ -14,6 +14,8 @@ import (
 func setupTestRouter() *gin.Engine {
 	// create Nova instance
 	nova := New()
+	// initialize Nova instance
+	nova.Init()
 	// apply default Gin service
 	router := gin.Default()
 	// apply Gin logger & recovery middleware
