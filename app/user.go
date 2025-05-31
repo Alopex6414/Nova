@@ -133,12 +133,42 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		defer nova.cache.userCache.mutex.Unlock()
 		// append user in data cache
 		nova.cache.userCache.userSet = append(nova.cache.userCache.userSet, user)
+	}(response)
+	// store created user in database
+	err = func(userId string) error {
+		// enable user cache write lock
+		nova.cache.userCache.mutex.RLock()
+		defer nova.cache.userCache.mutex.RUnlock()
+		// search userId in data cache
+		b := false
+		user := User{}
+		for _, v := range nova.cache.userCache.userSet {
+			if v.UserId == userId {
+				user = v
+				b = true
+				break
+			}
+		}
+		if !b {
+			return errors.New("user not found")
+		}
 		// store data cache in database
 		_, err := nova.db.CreateUser(&user)
 		if err != nil {
-			return
+			return err
 		}
-	}(response)
+		return nil
+	}(response.UserId)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Internal Server Error"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusInternalServerError
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusInternalServerError, problemDetails)
+		return
+	}
 	// return response
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusCreated, response)
