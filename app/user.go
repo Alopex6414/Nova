@@ -369,6 +369,41 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound, problemDetails)
 		return
 	}
+	// store patched user in database
+	err = func(userId string) error {
+		// enable user cache read lock
+		nova.cache.userCache.mutex.RLock()
+		defer nova.cache.userCache.mutex.RUnlock()
+		// search user in data cache
+		b := false
+		user := User{}
+		for _, v := range nova.cache.userCache.userSet {
+			if v.UserId == userId {
+				user = v
+				b = true
+				break
+			}
+		}
+		if !b {
+			return errors.New("user not found")
+		}
+		// update user in database
+		err = nova.db.UpdateUser(&user)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(response.UserId)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Internal Server Error"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusInternalServerError
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusInternalServerError, problemDetails)
+		return
+	}
 	// return response
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusOK, response)
@@ -546,6 +581,41 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 		problemDetails.Cause = errors.New("user not existed").Error()
 		c.Header("Content-Type", "application/problem+json")
 		c.JSON(http.StatusNotFound, problemDetails)
+		return
+	}
+	// store update user in database
+	err = func(userId string) error {
+		// enable user cache read lock
+		nova.cache.userCache.mutex.RLock()
+		defer nova.cache.userCache.mutex.RUnlock()
+		// search user in data cache
+		b := false
+		user := User{}
+		for _, v := range nova.cache.userCache.userSet {
+			if v.UserId == userId {
+				user = v
+				b = true
+				break
+			}
+		}
+		if !b {
+			return errors.New("user not found")
+		}
+		// update user in database
+		err = nova.db.UpdateUser(&user)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(response.UserId)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Internal Server Error"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusInternalServerError
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusInternalServerError, problemDetails)
 		return
 	}
 	// return response
