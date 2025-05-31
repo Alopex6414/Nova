@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	. "nova/configure"
+	"nova/logger"
 	"os"
 	"strconv"
 )
@@ -24,6 +25,19 @@ func New() *Nova {
 }
 
 func (nova *Nova) Init() {
+	// init logger
+	cfg := logger.Config{
+		Level:      logger.DebugLevel,
+		Filename:   "./logs/nova.log",
+		MaxSize:    100,
+		MaxBackups: 5,
+		MaxAge:     30,
+		Compress:   true,
+		Console:    false,
+	}
+	if err := logger.Init(cfg); err != nil {
+		panic(err)
+	}
 	// load configure
 	err := nova.conf.LoadConfig()
 	if err != nil {
