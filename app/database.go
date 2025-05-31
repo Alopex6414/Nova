@@ -99,7 +99,7 @@ func (db *DB) QueryUser(userId string) (*User, error) {
 	// execute query user
 	row := db.sqliteDB.QueryRow(query, userId)
 	user := &User{}
-	err := row.Scan(user.UserId, user.Username, user.Password, user.PhoneNumber, user.Email, user.Address, user.Company)
+	err := row.Scan(&user.UserId, &user.Username, &user.Password, &user.PhoneNumber, &user.Email, &user.Address, &user.Company)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("user not found")
@@ -118,7 +118,7 @@ func (db *DB) QueryUserContext(ctx context.Context, userId string) (*User, error
 	// execute query user
 	row := db.sqliteDB.QueryRowContext(ctx, query, userId)
 	user := &User{}
-	err := row.Scan(user.UserId, user.Username, user.Password, user.PhoneNumber, user.Email, user.Address, user.Company)
+	err := row.Scan(&user.UserId, &user.Username, &user.Password, &user.PhoneNumber, &user.Email, &user.Address, &user.Company, &user.UserId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("user not found")
@@ -228,7 +228,7 @@ func (db *DB) QueryUsers() ([]*User, error) {
 	var users []*User
 	for rows.Next() {
 		user := &User{}
-		if err := rows.Scan(user.UserId, user.Username, user.Password, user.PhoneNumber, user.Email, user.Address, user.Company); err != nil {
+		if err := rows.Scan(&user.UserId, &user.Username, &user.Password, &user.PhoneNumber, &user.Email, &user.Address, &user.Company); err != nil {
 			return nil, err
 		}
 		users = append(users, user)

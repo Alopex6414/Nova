@@ -136,7 +136,7 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 	}(response)
 	// store created user in database
 	err = func(userId string) error {
-		// enable user cache write lock
+		// enable user cache read lock
 		nova.cache.userCache.mutex.RLock()
 		defer nova.cache.userCache.mutex.RUnlock()
 		// search userId in data cache
@@ -152,7 +152,7 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		if !b {
 			return errors.New("user not found")
 		}
-		// store data cache in database
+		// create user in database
 		_, err := nova.db.CreateUser(&user)
 		if err != nil {
 			return err
@@ -218,6 +218,39 @@ func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 		problemDetails.Cause = errors.New("user not found").Error()
 		c.Header("Content-Type", "application/problem+json")
 		c.JSON(http.StatusNotFound, problemDetails)
+		return
+	}
+	// delete user from database
+	err := func(userId string) error {
+		// enable user cache read lock
+		nova.cache.userCache.mutex.RLock()
+		defer nova.cache.userCache.mutex.RUnlock()
+		// search userId in data cache
+		b := false
+		for _, v := range nova.cache.userCache.userSet {
+			if v.UserId == userId {
+				b = true
+				break
+			}
+		}
+		if !b {
+			return errors.New("user not found")
+		}
+		// delete user in database
+		err := nova.db.DeleteUser(userId)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(userId)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Internal Server Error"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusInternalServerError
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusInternalServerError, problemDetails)
 		return
 	}
 	// delete user from data cache
@@ -387,12 +420,40 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound, problemDetails)
 		return
 	}
+	// query user from database
+	err := func(userId string) error {
+		// enable user cache write lock
+		nova.cache.userCache.mutex.Lock()
+		defer nova.cache.userCache.mutex.Unlock()
+		// query user from database
+		user, err := nova.db.QueryUser(userId)
+		if err != nil {
+			return err
+		}
+		// update user in data cache
+		for k, v := range nova.cache.userCache.userSet {
+			if v.UserId == userId {
+				nova.cache.userCache.userSet[k] = *user
+			}
+		}
+		return nil
+	}(userId)
+	if err != nil {
+		var problemDetails ProblemDetails
+		problemDetails.Title = "Internal Server Error"
+		problemDetails.Type = "User"
+		problemDetails.Status = http.StatusInternalServerError
+		problemDetails.Cause = err.Error()
+		c.Header("Content-Type", "application/problem+json")
+		c.JSON(http.StatusInternalServerError, problemDetails)
+		return
+	}
 	// query user from data cache
 	response, err := func(userId string) (User, error) {
-		// enable user cache write lock
+		// enable user cache read lock
 		nova.cache.userCache.mutex.RLock()
 		defer nova.cache.userCache.mutex.RUnlock()
-		// search & delete user from data cache
+		// search & query user from data cache
 		for k, v := range nova.cache.userCache.userSet {
 			if v.UserId == userId {
 				return nova.cache.userCache.userSet[k], nil
