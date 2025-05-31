@@ -27,5 +27,9 @@ go.work.sum
 # idea
 .idea
 
-# bin
+# folders
 bin
+app/configure
+
+# database
+*.db
