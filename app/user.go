@@ -23,13 +23,7 @@ func (nova *Nova) HandleQueryUserId(c *gin.Context) {
 	// request body should bind json
 	err := c.ShouldBindJSON(&userName)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Bad Request"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusBadRequest
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusBadRequest, problemDetails)
+		nova.response400BadRequest(c, err)
 		return
 	}
 	// query userId from data cache
@@ -46,13 +40,7 @@ func (nova *Nova) HandleQueryUserId(c *gin.Context) {
 		return UserID{}, errors.New("userId not found")
 	}(userName)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Not Found"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusNotFound
-		problemDetails.Cause = errors.New("userId not found").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusNotFound, problemDetails)
+		nova.response404NotFound(c, errors.New("userId not found"))
 		return
 	}
 	// return response
@@ -66,13 +54,7 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 	// request body should bind json
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Bad Request"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusBadRequest
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusBadRequest, problemDetails)
+		nova.response400BadRequest(c, err)
 		return
 	}
 	// check request body correctness
@@ -85,24 +67,12 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		return true, nil
 	}(request)
 	if !b {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Bad Request"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusBadRequest
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusBadRequest, problemDetails)
+		nova.response400BadRequest(c, err)
 		return
 	}
 	// check user existence
 	if nova.isUserExisted(strings.ToLower(request.UserId)) {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Conflict"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusConflict
-		problemDetails.Cause = errors.New("user already exists").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusConflict, problemDetails)
+		nova.response409Conflict(c, errors.New("user already exists"))
 		return
 	}
 	// store created user in data cache
@@ -148,13 +118,7 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		return nil
 	}(response.UserId)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Internal Server Error"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusInternalServerError
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusInternalServerError, problemDetails)
+		nova.response500InternalServerError(c, err)
 		return
 	}
 	// return response
@@ -176,24 +140,12 @@ func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 		return true, nil
 	}(userId)
 	if !b {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Bad Request"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusBadRequest
-		problemDetails.Cause = errors.New("userId format incorrect").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusBadRequest, problemDetails)
+		nova.response400BadRequest(c, errors.New("userId format incorrect"))
 		return
 	}
 	// check user existence
 	if !nova.isUserExisted(userId) {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Not Found"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusNotFound
-		problemDetails.Cause = errors.New("user not found").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusNotFound, problemDetails)
+		nova.response404NotFound(c, errors.New("user not found"))
 		return
 	}
 	// delete user from database
@@ -220,13 +172,7 @@ func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 		return nil
 	}(userId)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Internal Server Error"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusInternalServerError
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusInternalServerError, problemDetails)
+		nova.response500InternalServerError(c, err)
 		return
 	}
 	// delete user from data cache
@@ -253,13 +199,7 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 	// request body should bind json
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Bad Request"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusBadRequest
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusBadRequest, problemDetails)
+		nova.response400BadRequest(c, err)
 		return
 	}
 	// check request body correctness
@@ -279,17 +219,12 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 		problemDetails.Cause = err.Error()
 		c.Header("Content-Type", "application/problem+json")
 		c.JSON(http.StatusBadRequest, problemDetails)
+		nova.response400BadRequest(c, err)
 		return
 	}
 	// check user existence
 	if !nova.isUserExisted(strings.ToLower(request.UserId)) {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Not Found"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusNotFound
-		problemDetails.Cause = errors.New("user not found").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusNotFound, problemDetails)
+		nova.response404NotFound(c, errors.New("user not found"))
 		return
 	}
 	// store modified user in data cache
@@ -324,13 +259,7 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 		return User{}, errors.New("user not found")
 	}(request)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Not Found"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusNotFound
-		problemDetails.Cause = errors.New("user not found").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusNotFound, problemDetails)
+		nova.response404NotFound(c, err)
 		return
 	}
 	// store patched user in database
@@ -359,13 +288,7 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 		return nil
 	}(response.UserId)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Internal Server Error"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusInternalServerError
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusInternalServerError, problemDetails)
+		nova.response500InternalServerError(c, err)
 		return
 	}
 	// return response
@@ -387,24 +310,12 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 		return true, nil
 	}(userId)
 	if !b {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Bad Request"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusBadRequest
-		problemDetails.Cause = errors.New("userId format incorrect").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusBadRequest, problemDetails)
+		nova.response400BadRequest(c, errors.New("userId format incorrect"))
 		return
 	}
 	// check user existence
 	if !nova.isUserExisted(userId) {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Not Found"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusNotFound
-		problemDetails.Cause = errors.New("user not found").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusNotFound, problemDetails)
+		nova.response404NotFound(c, errors.New("user not found"))
 		return
 	}
 	// query user from database
@@ -426,13 +337,7 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 		return nil
 	}(userId)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Internal Server Error"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusInternalServerError
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusInternalServerError, problemDetails)
+		nova.response500InternalServerError(c, err)
 		return
 	}
 	// query user from data cache
@@ -449,13 +354,7 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 		return User{}, errors.New("user not found")
 	}(userId)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Not Found"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusNotFound
-		problemDetails.Cause = errors.New("user not found").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusNotFound, problemDetails)
+		nova.response404NotFound(c, err)
 		return
 	}
 	// return response
@@ -469,25 +368,13 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 	// request body should bind json
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Bad Request"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusBadRequest
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusBadRequest, problemDetails)
+		nova.response400BadRequest(c, err)
 		return
 	}
 	// check request body correctness
 	// check user existence
 	if !nova.isUserExisted(strings.ToLower(request.UserId)) {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Forbidden"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusForbidden
-		problemDetails.Cause = errors.New("forbidden replace user without create it").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusForbidden, problemDetails)
+		nova.response403Forbidden(c, errors.New("forbidden replace user without create it"))
 		return
 	}
 	// store updated user in data cache
@@ -514,13 +401,7 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 		return false
 	}(response)
 	if !b {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Not Found"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusNotFound
-		problemDetails.Cause = errors.New("user not existed").Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusNotFound, problemDetails)
+		nova.response404NotFound(c, errors.New("user not found"))
 		return
 	}
 	// store update user in database
@@ -549,13 +430,7 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 		return nil
 	}(response.UserId)
 	if err != nil {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Internal Server Error"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusInternalServerError
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusInternalServerError, problemDetails)
+		nova.response500InternalServerError(c, err)
 		return
 	}
 	// return response
@@ -579,4 +454,56 @@ func (nova *Nova) isUserExisted(userId string) bool {
 		}
 	}
 	return false
+}
+
+func (nova *Nova) response400BadRequest(c *gin.Context, err error) {
+	var problemDetails ProblemDetails
+	problemDetails.Title = "Bad Request"
+	problemDetails.Type = "User"
+	problemDetails.Status = http.StatusBadRequest
+	problemDetails.Cause = err.Error()
+	c.Header("Content-Type", "application/problem+json")
+	c.JSON(http.StatusBadRequest, problemDetails)
+	return
+}
+
+func (nova *Nova) response403Forbidden(c *gin.Context, err error) {
+	var problemDetails ProblemDetails
+	problemDetails.Title = "Forbidden"
+	problemDetails.Type = "User"
+	problemDetails.Status = http.StatusForbidden
+	problemDetails.Cause = err.Error()
+	c.Header("Content-Type", "application/problem+json")
+	c.JSON(http.StatusForbidden, problemDetails)
+}
+
+func (nova *Nova) response404NotFound(c *gin.Context, err error) {
+	var problemDetails ProblemDetails
+	problemDetails.Title = "Not Found"
+	problemDetails.Type = "User"
+	problemDetails.Status = http.StatusNotFound
+	problemDetails.Cause = err.Error()
+	c.Header("Content-Type", "application/problem+json")
+	c.JSON(http.StatusNotFound, problemDetails)
+	return
+}
+
+func (nova *Nova) response409Conflict(c *gin.Context, err error) {
+	var problemDetails ProblemDetails
+	problemDetails.Title = "Conflict"
+	problemDetails.Type = "User"
+	problemDetails.Status = http.StatusConflict
+	problemDetails.Cause = err.Error()
+	c.Header("Content-Type", "application/problem+json")
+	c.JSON(http.StatusConflict, problemDetails)
+}
+
+func (nova *Nova) response500InternalServerError(c *gin.Context, err error) {
+	var problemDetails ProblemDetails
+	problemDetails.Title = "Internal Server Error"
+	problemDetails.Type = "User"
+	problemDetails.Status = http.StatusInternalServerError
+	problemDetails.Cause = err.Error()
+	c.Header("Content-Type", "application/problem+json")
+	c.JSON(http.StatusInternalServerError, problemDetails)
 }
