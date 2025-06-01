@@ -1,15 +1,20 @@
 package app
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	. "nova/configure"
 	"nova/logger"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 )
 
 type Nova struct {
@@ -144,10 +149,24 @@ func (nova *Nova) Start() {
 			TLSConfig: tlsConfig,
 		}
 		// listen and server
-		err := server.ListenAndServeTLS(certFile, keyFile)
-		if err != nil {
-			panic(err)
+		go func() {
+			if err := server.ListenAndServeTLS(certFile, keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				logger.Fatalf("Failed to start server: %s\n", err)
+			}
+		}()
+		// waiting for close server signal
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		logger.Info("Shutting down server...")
+		// creat timeout context
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		// graceful Shutting down server
+		if err := server.Shutdown(ctx); err != nil {
+			logger.Fatalf("Server forced to shutdown: %v\n", err)
 		}
+		logger.Info("Server exiting")
 	} else {
 		// start http service
 		port := nova.conf.Configure.Port
@@ -156,9 +175,23 @@ func (nova *Nova) Start() {
 			Handler: router,
 		}
 		// listen and server
-		err := server.ListenAndServe()
-		if err != nil {
-			panic(err)
+		go func() {
+			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				logger.Fatalf("Failed to start server: %s\n", err)
+			}
+		}()
+		// waiting for close server signal
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		logger.Info("Shutting down server...")
+		// creat timeout context
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		// graceful Shutting down server
+		if err := server.Shutdown(ctx); err != nil {
+			logger.Fatalf("Server forced to shutdown: %v\n", err)
 		}
+		logger.Info("Server exiting")
 	}
 }
