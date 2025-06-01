@@ -95,19 +95,7 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		return
 	}
 	// check user existence
-	b = func(userId string) bool {
-		// enable user cache read lock
-		nova.cache.userCache.mutex.RLock()
-		defer nova.cache.userCache.mutex.RUnlock()
-		// search userId in data cache
-		for _, v := range nova.cache.userCache.userSet {
-			if v.UserId == userId {
-				return true
-			}
-		}
-		return false
-	}(strings.ToLower(request.UserId))
-	if b {
+	if nova.isUserExisted(strings.ToLower(request.UserId)) {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "Conflict"
 		problemDetails.Type = "User"
@@ -198,19 +186,7 @@ func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 		return
 	}
 	// check user existence
-	b = func(userId string) bool {
-		// enable user cache read lock
-		nova.cache.userCache.mutex.RLock()
-		defer nova.cache.userCache.mutex.RUnlock()
-		// search userId in data cache
-		for _, v := range nova.cache.userCache.userSet {
-			if v.UserId == userId {
-				return true
-			}
-		}
-		return false
-	}(userId)
-	if !b {
+	if !nova.isUserExisted(userId) {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "Not Found"
 		problemDetails.Type = "User"
@@ -306,19 +282,7 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 		return
 	}
 	// check user existence
-	b = func(userId string) bool {
-		// enable user cache read lock
-		nova.cache.userCache.mutex.RLock()
-		defer nova.cache.userCache.mutex.RUnlock()
-		// search userId in data cache
-		for _, v := range nova.cache.userCache.userSet {
-			if v.UserId == userId {
-				return true
-			}
-		}
-		return false
-	}(strings.ToLower(request.UserId))
-	if !b {
+	if !nova.isUserExisted(strings.ToLower(request.UserId)) {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "Not Found"
 		problemDetails.Type = "User"
@@ -433,19 +397,7 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 		return
 	}
 	// check user existence
-	b = func(userId string) bool {
-		// enable user cache read lock
-		nova.cache.userCache.mutex.RLock()
-		defer nova.cache.userCache.mutex.RUnlock()
-		// search userId in data cache
-		for _, v := range nova.cache.userCache.userSet {
-			if v.UserId == userId {
-				return true
-			}
-		}
-		return false
-	}(userId)
-	if !b {
+	if !nova.isUserExisted(userId) {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "Not Found"
 		problemDetails.Type = "User"
@@ -528,19 +480,7 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 	}
 	// check request body correctness
 	// check user existence
-	b := func(userId string) bool {
-		// enable user cache read lock
-		nova.cache.userCache.mutex.RLock()
-		defer nova.cache.userCache.mutex.RUnlock()
-		// search userId in data cache
-		for _, v := range nova.cache.userCache.userSet {
-			if v.UserId == userId {
-				return true
-			}
-		}
-		return false
-	}(strings.ToLower(request.UserId))
-	if !b {
+	if !nova.isUserExisted(strings.ToLower(request.UserId)) {
 		var problemDetails ProblemDetails
 		problemDetails.Title = "Forbidden"
 		problemDetails.Type = "User"
@@ -560,7 +500,7 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 		Address:     request.Address,
 		Company:     request.Company,
 	}
-	b = func(user User) bool {
+	b := func(user User) bool {
 		// enable user cache write lock
 		nova.cache.userCache.mutex.Lock()
 		defer nova.cache.userCache.mutex.Unlock()
@@ -626,4 +566,17 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 
 func (nova *Nova) HandleCreateUserLogin(c *gin.Context) {
 	return
+}
+
+func (nova *Nova) isUserExisted(userId string) bool {
+	// enable user cache read lock
+	nova.cache.userCache.mutex.RLock()
+	defer nova.cache.userCache.mutex.RUnlock()
+	// search userId in data cache
+	for _, v := range nova.cache.userCache.userSet {
+		if v.UserId == userId {
+			return true
+		}
+	}
+	return false
 }

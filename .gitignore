@@ -33,3 +33,6 @@ app/configure
 
 # database
 *.db
+
+# logs
+logs
