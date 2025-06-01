@@ -3,6 +3,7 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	. "nova/configure"
@@ -36,23 +37,37 @@ func (nova *Nova) Init() {
 		Console:    false,
 	}
 	if err := logger.Init(cfg); err != nil {
-		panic(err)
+		fmt.Printf("Failed to init logger: %s\n", err)
+		os.Exit(2)
 	}
 	// load configure
+	logger.Info("Loading configuration...")
 	err := nova.conf.LoadConfig()
 	if err != nil {
-		panic(err)
+		logger.Fatalf("Failed to load config: %s\n", err)
+		fmt.Printf("Failed to load config: %s\n", err)
+		os.Exit(3)
 	}
+	logger.Info("Successfully loaded configuration.")
+	logger.Debug("YAML configuration:", nova.conf)
 	// create database
+	logger.Info("Create Nova database...")
 	nova.db, err = NewDB("file:nova.db?cache=shared")
 	if err != nil {
-		panic(err)
+		logger.Fatalf("Failed to create database: %s\n", err)
+		fmt.Printf("Failed to create database: %s\n", err)
+		os.Exit(4)
 	}
-	// create table
+	logger.Info("Successfully create database.")
+	// create tables
+	logger.Info("Create tables...")
 	err = nova.db.CreateTables()
 	if err != nil {
-		panic(err)
+		logger.Fatalf("Failed to create tables: %s\n", err)
+		fmt.Printf("Failed to create tables: %s\n", err)
+		os.Exit(5)
 	}
+	logger.Info("Successfully create tables.")
 }
 
 func (nova *Nova) Start() {
