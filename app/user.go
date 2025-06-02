@@ -5,47 +5,50 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"nova/logger"
 	"strings"
 )
 
 func (nova *Nova) HandleCreateUserId(c *gin.Context) {
 	// create userId
 	var userId UserID
+	logger.Infof("handle request create userId")
+	// generate userId
 	userId.UserId = uuid.New().String()
+	logger.Debugf("generate userId: %v", userId.UserId)
 	// return response
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusCreated, userId)
+	logger.Infof("response status code: %v, body: %v", http.StatusCreated, userId.UserId)
 	return
 }
 
 func (nova *Nova) HandleQueryUserId(c *gin.Context) {
+	// query userId
 	var userName UserName
+	logger.Infof("handle request query userId")
 	// request body should bind json
+	logger.Debugf("request body bind json format")
 	err := c.ShouldBindJSON(&userName)
 	if err != nil {
 		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
 		return
 	}
+	logger.Debugf("successfully bind request json format")
 	// query userId from data cache
-	userId, err := func(userName UserName) (UserID, error) {
-		// enable user cache write lock
-		nova.cache.userCache.mutex.RLock()
-		defer nova.cache.userCache.mutex.RUnlock()
-		// search & delete user from data cache
-		for k, v := range nova.cache.userCache.userSet {
-			if v.Username == userName.Username {
-				return UserID{UserId: nova.cache.userCache.userSet[k].UserId}, nil
-			}
-		}
-		return UserID{}, errors.New("userId not found")
-	}(userName)
+	logger.Debugf("query userId from data cache")
+	userId, err := nova.queryUserFromDataCache(userName)
 	if err != nil {
-		nova.response404NotFound(c, errors.New("userId not found"))
+		nova.response404NotFound(c, err)
+		logger.Errorf("error query user from data cache: %v", err)
 		return
 	}
+	logger.Debugf("successfully query user from data cache")
 	// return response
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusOK, userId)
+	logger.Infof("response status code: %v, body: %v", http.StatusOK, userId.UserId)
 	return
 }
 
@@ -454,6 +457,19 @@ func (nova *Nova) isUserExisted(userId string) bool {
 		}
 	}
 	return false
+}
+
+func (nova *Nova) queryUserFromDataCache(userName UserName) (UserID, error) {
+	// enable user cache write lock
+	nova.cache.userCache.mutex.RLock()
+	defer nova.cache.userCache.mutex.RUnlock()
+	// search & delete user from data cache
+	for k, v := range nova.cache.userCache.userSet {
+		if v.Username == userName.Username {
+			return UserID{UserId: nova.cache.userCache.userSet[k].UserId}, nil
+		}
+	}
+	return UserID{}, errors.New("userId not found")
 }
 
 func (nova *Nova) response400BadRequest(c *gin.Context, err error) {
