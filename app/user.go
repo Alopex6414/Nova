@@ -53,32 +53,37 @@ func (nova *Nova) HandleQueryUserId(c *gin.Context) {
 }
 
 func (nova *Nova) HandleCreateUser(c *gin.Context) {
+	// create user
 	var request User
+	logger.Infof("handle request create user")
 	// request body should bind json
+	logger.Debugf("request body bind json format")
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
 		return
 	}
+	logger.Debugf("successfully bind request json format")
 	// check request body correctness
-	b, err := func(user User) (bool, error) {
-		// check userId format is UUID
-		err = uuid.Validate(user.UserId)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	}(request)
+	logger.Debugf("check user is validate")
+	b, err := nova.isUserValidate(request)
 	if !b {
 		nova.response400BadRequest(c, err)
+		logger.Errorf("error check user is validate: %v", err)
 		return
 	}
+	logger.Debugf("successfully check user is validate")
 	// check user existence
+	logger.Debugf("check user is existed")
 	if nova.isUserExisted(strings.ToLower(request.UserId)) {
 		nova.response409Conflict(c, errors.New("user already exists"))
+		logger.Errorf("error check user is existed: %v", err)
 		return
 	}
+	logger.Debugf("successfully check user is existed")
 	// store created user in data cache
+	logger.Debugf("store user in data cache")
 	response := User{
 		UserId:      strings.ToLower(request.UserId),
 		Username:    request.Username,
@@ -88,42 +93,16 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		Address:     request.Address,
 		Company:     request.Company,
 	}
-	func(user User) {
-		// enable user cache write lock
-		nova.cache.userCache.mutex.Lock()
-		defer nova.cache.userCache.mutex.Unlock()
-		// append user in data cache
-		nova.cache.userCache.userSet = append(nova.cache.userCache.userSet, user)
-	}(response)
+	nova.storeUserInDataCache(response)
+	logger.Debugf("successfully store user in data cache")
 	// store created user in database
-	err = func(userId string) error {
-		// enable user cache read lock
-		nova.cache.userCache.mutex.RLock()
-		defer nova.cache.userCache.mutex.RUnlock()
-		// search userId in data cache
-		b := false
-		user := User{}
-		for _, v := range nova.cache.userCache.userSet {
-			if v.UserId == userId {
-				user = v
-				b = true
-				break
-			}
-		}
-		if !b {
-			return errors.New("user not found")
-		}
-		// create user in database
-		_, err := nova.db.CreateUser(&user)
-		if err != nil {
-			return err
-		}
-		return nil
-	}(response.UserId)
-	if err != nil {
+	logger.Debugf("store user in database")
+	if err = nova.storeUserInDatabase(response.UserId); err != nil {
 		nova.response500InternalServerError(c, err)
+		logger.Errorf("error user in database: %v", err)
 		return
 	}
+	logger.Debugf("successfully store user in database")
 	// return response
 	c.Header("Content-Type", "application/json")
 	c.JSON(http.StatusCreated, response)
@@ -457,6 +436,47 @@ func (nova *Nova) isUserExisted(userId string) bool {
 		}
 	}
 	return false
+}
+
+func (nova *Nova) isUserValidate(user User) (bool, error) {
+	// check userId format is UUID
+	err := uuid.Validate(user.UserId)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (nova *Nova) storeUserInDataCache(user User) {
+	// enable user cache write lock
+	nova.cache.userCache.mutex.Lock()
+	defer nova.cache.userCache.mutex.Unlock()
+	// append user in data cache
+	nova.cache.userCache.userSet = append(nova.cache.userCache.userSet, user)
+}
+
+func (nova *Nova) storeUserInDatabase(userId string) error {
+	// enable user cache read lock
+	nova.cache.userCache.mutex.RLock()
+	defer nova.cache.userCache.mutex.RUnlock()
+	// search userId in data cache
+	b := false
+	user := User{}
+	for _, v := range nova.cache.userCache.userSet {
+		if v.UserId == userId {
+			user = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("user not found")
+	}
+	// create user in database
+	if _, err := nova.db.CreateUser(&user); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (nova *Nova) queryUserFromDataCache(userName UserName) (UserID, error) {
