@@ -146,38 +146,35 @@ func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 }
 
 func (nova *Nova) HandleModifyUser(c *gin.Context) {
+	// modify user
 	var request User
+	logger.Infof("handle request modify user")
 	// request body should bind json
+	logger.Debugf("request body bind json format")
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
 		return
 	}
+	logger.Debugf("successfully bind request json format")
 	// check request body correctness
-	b, err := func(user User) (bool, error) {
-		// check userId format is UUID
-		err = uuid.Validate(user.UserId)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
-	}(request)
+	logger.Debugf("check user is validate")
+	b, err := nova.isUserValidate(request)
 	if !b {
-		var problemDetails ProblemDetails
-		problemDetails.Title = "Bad Request"
-		problemDetails.Type = "User"
-		problemDetails.Status = http.StatusBadRequest
-		problemDetails.Cause = err.Error()
-		c.Header("Content-Type", "application/problem+json")
-		c.JSON(http.StatusBadRequest, problemDetails)
 		nova.response400BadRequest(c, err)
+		logger.Errorf("error check user is existed: %v", err)
 		return
 	}
+	logger.Debugf("successfully check user is validate")
 	// check user existence
+	logger.Debugf("check user is existed")
 	if !nova.isUserExisted(strings.ToLower(request.UserId)) {
 		nova.response404NotFound(c, errors.New("user not found"))
+		logger.Errorf("error check user is existed: %v", err)
 		return
 	}
+	logger.Debugf("successfully check user is existed")
 	// store modified user in data cache
 	response, err := func(user User) (User, error) {
 		// enable user cache write lock
