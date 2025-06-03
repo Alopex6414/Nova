@@ -243,20 +243,29 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 }
 
 func (nova *Nova) HandleUpdateUser(c *gin.Context) {
+	// update user
 	var request User
+	logger.Infof("handle request update user")
 	// request body should bind json
+	logger.Debugf("request body bind json format")
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
 		return
 	}
+	logger.Debugf("successfully bind request json format")
 	// check request body correctness
 	// check user existence
+	logger.Debugf("check user existence")
 	if !nova.isUserExisted(strings.ToLower(request.UserId)) {
 		nova.response403Forbidden(c, errors.New("forbidden replace user without create it"))
+		logger.Errorf("error check user existence")
 		return
 	}
+	logger.Debugf("successfully check user existence")
 	// store updated user in data cache
+	logger.Debugf("update user in data cache")
 	response := User{
 		UserId:      strings.ToLower(request.UserId),
 		Username:    request.Username,
@@ -266,55 +275,23 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 		Address:     request.Address,
 		Company:     request.Company,
 	}
-	b := func(user User) bool {
-		// enable user cache write lock
-		nova.cache.userCache.mutex.Lock()
-		defer nova.cache.userCache.mutex.Unlock()
-		// replace user in data cache
-		for k, v := range nova.cache.userCache.userSet {
-			if v.UserId == user.UserId {
-				nova.cache.userCache.userSet[k] = user
-				return true
-			}
-		}
-		return false
-	}(response)
-	if !b {
+	if b := nova.updateUserInDataCache(response); !b {
 		nova.response404NotFound(c, errors.New("user not found"))
+		logger.Errorf("error update user in data cache")
 		return
 	}
+	logger.Debugf("successfully update user in data cache")
 	// store update user in database
-	err = func(userId string) error {
-		// enable user cache read lock
-		nova.cache.userCache.mutex.RLock()
-		defer nova.cache.userCache.mutex.RUnlock()
-		// search user in data cache
-		b := false
-		user := User{}
-		for _, v := range nova.cache.userCache.userSet {
-			if v.UserId == userId {
-				user = v
-				b = true
-				break
-			}
-		}
-		if !b {
-			return errors.New("user not found")
-		}
-		// update user in database
-		err = nova.db.UpdateUser(&user)
-		if err != nil {
-			return err
-		}
-		return nil
-	}(response.UserId)
-	if err != nil {
+	logger.Debugf("update user in database")
+	if err = nova.updateUserInDatabase(response.UserId); err != nil {
 		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update user in database")
 		return
 	}
+	logger.Debugf("successfully update user in database")
 	// return response
-	c.Header("Content-Type", "application/json")
-	c.JSON(http.StatusOK, response)
+	nova.response200OK(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusOK, response)
 	return
 }
 
@@ -420,6 +397,20 @@ func (nova *Nova) queryUserInDataCache(userId string) (User, error) {
 	return User{}, errors.New("user not found")
 }
 
+func (nova *Nova) updateUserInDataCache(user User) bool {
+	// enable user cache write lock
+	nova.cache.userCache.mutex.Lock()
+	defer nova.cache.userCache.mutex.Unlock()
+	// replace user in data cache
+	for k, v := range nova.cache.userCache.userSet {
+		if v.UserId == user.UserId {
+			nova.cache.userCache.userSet[k] = user
+			return true
+		}
+	}
+	return false
+}
+
 func (nova *Nova) createUserInDatabase(userId string) error {
 	// enable user cache read lock
 	nova.cache.userCache.mutex.RLock()
@@ -504,6 +495,30 @@ func (nova *Nova) queryUserInDatabase(userId string) error {
 		if v.UserId == userId {
 			nova.cache.userCache.userSet[k] = *user
 		}
+	}
+	return nil
+}
+
+func (nova *Nova) updateUserInDatabase(userId string) error {
+	// enable user cache read lock
+	nova.cache.userCache.mutex.RLock()
+	defer nova.cache.userCache.mutex.RUnlock()
+	// search user in data cache
+	b := false
+	user := User{}
+	for _, v := range nova.cache.userCache.userSet {
+		if v.UserId == userId {
+			user = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("user not found")
+	}
+	// update user in database
+	if err := nova.db.UpdateUser(&user); err != nil {
+		return err
 	}
 	return nil
 }
