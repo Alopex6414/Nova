@@ -23,6 +23,14 @@ func NewDB(dbPath string) (*DB, error) {
 	return &DB{sqliteDB}, err
 }
 
+func (db *DB) Close() error {
+	// close sqlite3 database
+	if err := db.sqliteDB.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (db *DB) CreateTables() error {
 	// create user table
 	sql := `

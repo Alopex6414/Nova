@@ -24,6 +24,46 @@ type RedisConfig struct {
 	WriteTimeout time.Duration
 }
 
+func NewRedisClient(cfg *RedisConfig) (*RedisClient, error) {
+	// get configure address and max retry times
+	if cfg.Addr == "" {
+		cfg.Addr = "localhost:6379"
+	}
+	if cfg.MaxRetries == 0 {
+		cfg.MaxRetries = 3
+	}
+	// create redis client
+	client := redis.NewClient(&redis.Options{
+		Addr:         cfg.Addr,
+		Password:     cfg.Password,
+		DB:           cfg.DB,
+		PoolSize:     100,
+		MinIdleConns: 10,
+		DialTimeout:  5 * time.Second,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		MaxRetries:   cfg.MaxRetries,
+	})
+	// context without timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := client.Ping(ctx).Result(); err != nil {
+		return nil, fmt.Errorf("redis connection failed: %v", err)
+	}
+	// return redis client
+	return &RedisClient{
+		client: client,
+		config: cfg,
+	}, nil
+}
+
+func (rc *RedisClient) Close() error {
+	if rc.client != nil {
+		return rc.client.Close()
+	}
+	return nil
+}
+
 // HSet set hash
 func (rc *RedisClient) HSet(ctx context.Context, key string, fieldValues ...interface{}) error {
 	return rc.client.HSet(ctx, key, fieldValues...).Err()
@@ -126,39 +166,6 @@ func generateToken() string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	return base64.StdEncoding.EncodeToString(b)
-}
-
-func NewRedisClient(cfg *RedisConfig) (*RedisClient, error) {
-	// get configure address and max retry times
-	if cfg.Addr == "" {
-		cfg.Addr = "localhost:6379"
-	}
-	if cfg.MaxRetries == 0 {
-		cfg.MaxRetries = 3
-	}
-	// create redis client
-	client := redis.NewClient(&redis.Options{
-		Addr:         cfg.Addr,
-		Password:     cfg.Password,
-		DB:           cfg.DB,
-		PoolSize:     100,
-		MinIdleConns: 10,
-		DialTimeout:  5 * time.Second,
-		ReadTimeout:  cfg.ReadTimeout,
-		WriteTimeout: cfg.WriteTimeout,
-		MaxRetries:   cfg.MaxRetries,
-	})
-	// context without timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if _, err := client.Ping(ctx).Result(); err != nil {
-		return nil, fmt.Errorf("redis connection failed: %v", err)
-	}
-	// return redis client
-	return &RedisClient{
-		client: client,
-		config: cfg,
-	}, nil
 }
 
 // use distribute lock

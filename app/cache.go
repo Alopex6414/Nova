@@ -1,16 +1,32 @@
 package app
 
-import "sync"
+import (
+	. "nova/cache"
+)
 
 type Cache struct {
-	userCache UserCache
+	redisCache *RedisClient
 }
 
-type UserCache struct {
-	userSet []User
-	mutex   sync.RWMutex
+func NewCache() (*Cache, error) {
+	// set redis configure
+	cfg := &RedisConfig{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	}
+	// create redis cache
+	client, err := NewRedisClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &Cache{client}, nil
 }
 
-func NewCache() *Cache {
-	return &Cache{}
+func (cache *Cache) Close() error {
+	// close redis client
+	if err := cache.redisCache.Close(); err != nil {
+		return err
+	}
+	return nil
 }
