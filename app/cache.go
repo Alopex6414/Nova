@@ -2,13 +2,27 @@ package app
 
 import (
 	. "nova/cache"
+	"sync"
 )
 
 type Cache struct {
+	userCache UserCache
+}
+
+type UserCache struct {
+	userSet []User
+	mutex   sync.RWMutex
+}
+
+func NewCache() *Cache {
+	return &Cache{}
+}
+
+type RedisCache struct {
 	redisCache *RedisClient
 }
 
-func NewCache() (*Cache, error) {
+func NewRedisCache() (*RedisCache, error) {
 	// set redis configure
 	cfg := &RedisConfig{
 		Addr:     "localhost:6379",
@@ -20,10 +34,10 @@ func NewCache() (*Cache, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Cache{client}, nil
+	return &RedisCache{client}, nil
 }
 
-func (cache *Cache) Close() error {
+func (cache *RedisCache) Close() error {
 	// close redis client
 	if err := cache.redisCache.Close(); err != nil {
 		return err

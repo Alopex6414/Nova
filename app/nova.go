@@ -21,6 +21,7 @@ type Nova struct {
 	conf  *Config
 	cache *Cache
 	db    *DB
+	rc    *RedisCache
 }
 
 func New() *Nova {
@@ -55,13 +56,22 @@ func (nova *Nova) Init() {
 	}
 	logger.Info("Successfully loaded configuration.")
 	logger.Debug("YAML configuration:", nova.conf)
+	// create redis data cache
+	logger.Info("Create Nova redis data cache...")
+	nova.rc, err = NewRedisCache()
+	if err != nil {
+		logger.Fatalf("Failed to create redis data cache: %s\n", err)
+		fmt.Printf("Failed to create redis data cache: %s\n", err)
+		os.Exit(4)
+	}
+	logger.Info("Successfully create redis data cache.")
 	// create database
 	logger.Info("Create Nova database...")
 	nova.db, err = NewDB("file:nova.db?cache=shared")
 	if err != nil {
 		logger.Fatalf("Failed to create database: %s\n", err)
 		fmt.Printf("Failed to create database: %s\n", err)
-		os.Exit(4)
+		os.Exit(5)
 	}
 	logger.Info("Successfully create database.")
 	// create tables
@@ -70,7 +80,7 @@ func (nova *Nova) Init() {
 	if err != nil {
 		logger.Fatalf("Failed to create tables: %s\n", err)
 		fmt.Printf("Failed to create tables: %s\n", err)
-		os.Exit(5)
+		os.Exit(6)
 	}
 	logger.Info("Successfully create tables.")
 }
@@ -158,11 +168,18 @@ func (nova *Nova) Start() {
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
-		logger.Info("Shutting down server...")
 		// creat timeout context
+		logger.Info("Create timeout context...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+		// stop & clean up resources
+		logger.Info("Stop server & Clean Up resources...")
+		if err := nova.Stop(); err != nil {
+			logger.Fatalf("Server forced to shutdown: %v\n", err)
+		}
+		logger.Info("Server stop & clean up successfully")
 		// graceful Shutting down server
+		logger.Info("Shutting down server...")
 		if err := server.Shutdown(ctx); err != nil {
 			logger.Fatalf("Server forced to shutdown: %v\n", err)
 		}
@@ -184,14 +201,33 @@ func (nova *Nova) Start() {
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
-		logger.Info("Shutting down server...")
 		// creat timeout context
+		logger.Info("Create timeout context...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+		// stop & clean up resources
+		logger.Info("Stop server & Clean Up resources...")
+		if err := nova.Stop(); err != nil {
+			logger.Fatalf("Server forced to shutdown: %v\n", err)
+		}
+		logger.Info("Server stop & clean up successfully")
 		// graceful Shutting down server
+		logger.Info("Shutting down server...")
 		if err := server.Shutdown(ctx); err != nil {
 			logger.Fatalf("Server forced to shutdown: %v\n", err)
 		}
 		logger.Info("Server exiting")
 	}
+}
+
+func (nova *Nova) Stop() error {
+	// stop redis cache
+	if err := nova.rc.Close(); err != nil {
+		return err
+	}
+	// stop sqlite3 database
+	if err := nova.db.Close(); err != nil {
+		return err
+	}
+	return nil
 }
