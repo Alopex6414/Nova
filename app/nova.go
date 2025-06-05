@@ -57,14 +57,16 @@ func (nova *Nova) Init() {
 	logger.Info("Successfully loaded configuration.")
 	logger.Debug("YAML configuration:", nova.conf)
 	// create redis data cache
-	logger.Info("Create Nova redis data cache...")
-	nova.rc, err = NewRedisCache()
-	if err != nil {
-		logger.Fatalf("Failed to create redis data cache: %s\n", err)
-		fmt.Printf("Failed to create redis data cache: %s\n", err)
-		os.Exit(4)
+	if nova.conf.Configure.Cache.CacheType == "redis" {
+		logger.Info("Create Nova redis data cache...")
+		nova.rc, err = NewRedisCache()
+		if err != nil {
+			logger.Fatalf("Failed to create redis data cache: %s\n", err)
+			fmt.Printf("Failed to create redis data cache: %s\n", err)
+			os.Exit(4)
+		}
+		logger.Info("Successfully create redis data cache.")
 	}
-	logger.Info("Successfully create redis data cache.")
 	// create database
 	logger.Info("Create Nova database...")
 	nova.db, err = NewDB("file:nova.db?cache=shared")

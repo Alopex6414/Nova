@@ -22,11 +22,12 @@ func (c *Config) LoadConfig() (err error) {
 }
 
 type NovaConfig struct {
-	FQDN     string      `json:"FQDN" yaml:"FQDN"`
-	IPv4Addr string      `json:"IPv4Addr" yaml:"IPv4Addr"`
-	IPv6Addr string      `json:"IPv6Addr" yaml:"IPv6Addr"`
-	Port     int         `json:"Port" yaml:"Port"`
-	TLS      TLSSettings `json:"TLSSettings" yaml:"TLSSettings"`
+	FQDN     string        `json:"FQDN" yaml:"FQDN"`
+	IPv4Addr string        `json:"IPv4Addr" yaml:"IPv4Addr"`
+	IPv6Addr string        `json:"IPv6Addr" yaml:"IPv6Addr"`
+	Port     int           `json:"Port" yaml:"Port"`
+	TLS      TLSSettings   `json:"TLSSettings" yaml:"TLSSettings"`
+	Cache    CacheSettings `json:"CacheSettings" yaml:"CacheSettings"`
 }
 
 type TLSSettings struct {
@@ -35,6 +36,10 @@ type TLSSettings struct {
 	KeyFile       string `json:"keyFile" yaml:"keyFile"`
 	CertFile      string `json:"certFile" yaml:"certFile"`
 	CAFile        string `json:"caFile" yaml:"caFile"`
+}
+
+type CacheSettings struct {
+	CacheType string `json:"cacheType" yaml:"cacheType"`
 }
 
 func MarshalTo(file string, t interface{}) (err error) {

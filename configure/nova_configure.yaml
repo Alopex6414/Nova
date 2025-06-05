@@ -9,3 +9,5 @@
   "keyFile": "./cert/server.key" # private key
   "certFile": "./cert/server.pem" # public certification
   "caFile": "./cert/ca.crt" # CA certificate authority
+"CacheSettings":
+  "cacheType": "memory" # <cache type>: <memory> or <redis>
