@@ -64,6 +64,42 @@ func (rc *RedisClient) Close() error {
 	return nil
 }
 
+// Set key pair
+func (rc *RedisClient) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	return rc.client.Set(ctx, key, value, expiration).Err()
+}
+
+// Get key pair
+func (rc *RedisClient) Get(ctx context.Context, key string) (string, error) {
+	val, err := rc.client.Get(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return "", fmt.Errorf("key %s does not exist", key)
+	}
+	return val, err
+}
+
+// Exists key pair
+func (rc *RedisClient) Exists(ctx context.Context, key string) (bool, error) {
+	exist, err := rc.client.Exists(ctx, key).Result()
+	return exist == 1, err
+}
+
+// Expire key pair
+func (rc *RedisClient) Expire(ctx context.Context, key string, expiration time.Duration) error {
+	return rc.client.Expire(ctx, key, expiration).Err()
+}
+
+// Delete key pair
+func (rc *RedisClient) Delete(ctx context.Context, keys ...string) (int64, error) {
+	return rc.client.Del(ctx, keys...).Result()
+}
+
+// Pipeline pipeline operation
+func (rc *RedisClient) Pipeline(ctx context.Context, fn func(pipe redis.Pipeliner) error) error {
+	_, err := rc.client.Pipelined(ctx, fn)
+	return err
+}
+
 // HSet set hash
 func (rc *RedisClient) HSet(ctx context.Context, key string, fieldValues ...interface{}) error {
 	return rc.client.HSet(ctx, key, fieldValues...).Err()
@@ -95,7 +131,11 @@ func (rc *RedisClient) BRPop(ctx context.Context, timeout time.Duration, keys ..
 
 // Lock get distribute lock (auto generate random token)
 func (rc *RedisClient) Lock(ctx context.Context, key string, ttl time.Duration) (string, error) {
-	token := generateToken()
+	token := func() string {
+		b := make([]byte, 16)
+		rand.Read(b)
+		return base64.StdEncoding.EncodeToString(b)
+	}()
 	ok, err := rc.client.SetNX(ctx, key, token, ttl).Result()
 	if err != nil {
 		return "", err
@@ -162,60 +202,41 @@ func (rc *RedisClient) PoolStats() *redis.PoolStats {
 	return rc.client.PoolStats()
 }
 
-func generateToken() string {
-	b := make([]byte, 16)
-	rand.Read(b)
-	return base64.StdEncoding.EncodeToString(b)
+// Subscribe event
+func (rc *RedisClient) Subscribe(ctx context.Context, channels ...string) *redis.PubSub {
+	return rc.client.Subscribe(ctx, channels...)
 }
 
-// use distribute lock
-func useDistributedLock(client *RedisClient) {
-	ctx := context.Background()
-	lockKey := "resource_lock"
-	// get lock
-	token, err := client.Lock(ctx, lockKey, 30*time.Second)
-	if err != nil {
-		fmt.Println("get lock failed:", err)
-		return
-	}
-	defer client.Unlock(ctx, lockKey, token)
-	// perform operate with protection
-	fmt.Println("execute...")
-	time.Sleep(10 * time.Second)
+// Publish event
+func (rc *RedisClient) Publish(ctx context.Context, channel string, message interface{}) error {
+	return rc.client.Publish(ctx, channel, message).Err()
 }
 
-// use transaction
-func useTransaction(client *RedisClient) {
-	ctx := context.Background()
-	key := "transaction_counter"
-
-	result, err := client.TxIncr(ctx, key)
-	if err != nil {
-		fmt.Println("transaction execute failed:", err)
-		return
-	}
-	fmt.Printf("transaction increase result: %d\n", result)
+// HealthCheck health check
+func (rc *RedisClient) HealthCheck(ctx context.Context) error {
+	_, err := rc.client.Ping(ctx).Result()
+	return err
 }
 
-// user hash operate
-func useHash(client *RedisClient) {
-	ctx := context.Background()
-	key := "user:1001"
-	// set hash segment
-	err := client.HSet(ctx, key, "name", "Alice", "age", 30)
-	if err != nil {
-		panic(err)
-	}
-	// get single segment
-	name, err := client.HGet(ctx, key, "name")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("User name:", name)
-	// get all segments
-	allFields, err := client.HGetAll(ctx, key)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("All fields:", allFields)
+// ScanKeys scan keys
+func (rc *RedisClient) ScanKeys(ctx context.Context, pattern string, batchSize int) <-chan string {
+	ch := make(chan string)
+	go func() {
+		defer close(ch)
+		var cursor uint64
+		for {
+			keys, nextCursor, err := rc.client.Scan(ctx, cursor, pattern, int64(batchSize)).Result()
+			if err != nil {
+				return
+			}
+			for _, key := range keys {
+				ch <- key
+			}
+			if nextCursor == 0 {
+				break
+			}
+			cursor = nextCursor
+		}
+	}()
+	return ch
 }

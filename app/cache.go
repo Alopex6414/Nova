@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	. "nova/cache"
 	"sync"
 )
@@ -40,6 +41,14 @@ func NewRedisCache() (*RedisCache, error) {
 func (cache *RedisCache) Close() error {
 	// close redis client
 	if err := cache.redisCache.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cache *RedisCache) CreateUser(user *User) error {
+	// create user in redis cache
+	if err := cache.redisCache.HSet(context.Background(), user.UserId, user); err != nil {
 		return err
 	}
 	return nil

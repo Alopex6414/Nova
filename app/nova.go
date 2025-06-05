@@ -223,9 +223,12 @@ func (nova *Nova) Start() {
 }
 
 func (nova *Nova) Stop() error {
-	// stop redis cache
-	if err := nova.rc.Close(); err != nil {
-		return err
+	// stop redis cache (configure redis)
+	if nova.conf.Configure.Cache.CacheType == "redis" {
+		// stop redis cache
+		if err := nova.rc.Close(); err != nil {
+			return err
+		}
 	}
 	// stop sqlite3 database
 	if err := nova.db.Close(); err != nil {
