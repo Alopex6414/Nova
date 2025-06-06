@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -60,6 +61,12 @@ func (m *MySqlDB) Close() error {
 		return m.db.Close()
 	}
 	return nil
+}
+
+// Ping database connection
+func (m *MySqlDB) Ping(ctx context.Context) error {
+	// ping context
+	return m.db.PingContext(ctx)
 }
 
 // Exec perform execute(insert/query/delete)
