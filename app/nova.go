@@ -142,7 +142,7 @@ func (nova *Nova) Start() {
 			caFile := nova.conf.Configure.TLS.CAFile
 			caCert, err := os.ReadFile(caFile)
 			if err != nil {
-				panic(err)
+				logger.Panicf("Failed to read CA file: %s\n", err)
 			}
 			// create CA certificate pool
 			caCertPool := x509.NewCertPool()
