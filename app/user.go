@@ -296,6 +296,72 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 }
 
 func (nova *Nova) HandleCreateUserLogin(c *gin.Context) {
+	// login user
+	var request UserLogin
+	logger.Infof("handle request login user")
+	// extract userId from uri
+	userId := strings.ToLower(c.Param("userId"))
+	// request body should bind json
+	logger.Debugf("request body bind json format")
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
+		return
+	}
+	logger.Debugf("successfully bind request json format")
+	// request userId correctness
+	logger.Debugf("check userId is validate")
+	if b, _ := nova.isUserIdValidate(userId); !b {
+		nova.response400BadRequest(c, errors.New("userId format incorrect"))
+		logger.Errorf("error check userId is validate")
+		return
+	}
+	logger.Debugf("successfully check userId is validate")
+	// check user existence
+	logger.Debugf("check user is existed")
+	if !nova.isUserExisted(userId) {
+		nova.response404NotFound(c, errors.New("user not found"))
+		logger.Errorf("error check user is existed")
+		return
+	}
+	logger.Debugf("successfully check user is existed")
+	// query user from database
+	logger.Debugf("query user in database")
+	if err := nova.queryUserInDatabase(userId); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error query user in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully query user in database")
+	// query user from data cache
+	logger.Debugf("query user in data cache")
+	user, err := nova.queryUserInDataCache(userId)
+	if err != nil {
+		nova.response404NotFound(c, err)
+		logger.Errorf("error query user in data cache: %v", err)
+		return
+	}
+	logger.Debugf("successfully query user in data cache")
+	// check username
+	logger.Debugf("check username consistentance")
+	if user.Username != request.Username {
+		nova.response412PreconditionFailed(c, errors.New("request username inconsistent with database"))
+		logger.Errorf("error check username consistentance.")
+		return
+	}
+	logger.Debugf("successfully check username consistentance")
+	// verify password correctness
+	logger.Debugf("check password correctness")
+	if user.Password != request.Password {
+		nova.response417ExpectationFailed(c, errors.New("request password inconsistent with database"))
+		logger.Errorf("error check password correctness.")
+		return
+	}
+	logger.Debugf("successfully check password correctness")
+	// return response
+	nova.response200OK(c, nil)
+	logger.Infof("response status code: %v", http.StatusOK)
 	return
 }
 
@@ -594,6 +660,28 @@ func (nova *Nova) response409Conflict(c *gin.Context, err error) {
 	problemDetails.Cause = err.Error()
 	c.Header("Content-Type", "application/problem+json")
 	c.JSON(http.StatusConflict, problemDetails)
+	return
+}
+
+func (nova *Nova) response412PreconditionFailed(c *gin.Context, err error) {
+	var problemDetails ProblemDetails
+	problemDetails.Title = "PreconditionFailed"
+	problemDetails.Type = "User"
+	problemDetails.Status = http.StatusPreconditionFailed
+	problemDetails.Cause = err.Error()
+	c.Header("Content-Type", "application/problem+json")
+	c.JSON(http.StatusPreconditionFailed, problemDetails)
+	return
+}
+
+func (nova *Nova) response417ExpectationFailed(c *gin.Context, err error) {
+	var problemDetails ProblemDetails
+	problemDetails.Title = "ExpectationFailed"
+	problemDetails.Type = "User"
+	problemDetails.Status = http.StatusExpectationFailed
+	problemDetails.Cause = err.Error()
+	c.Header("Content-Type", "application/problem+json")
+	c.JSON(http.StatusExpectationFailed, problemDetails)
 	return
 }
 
