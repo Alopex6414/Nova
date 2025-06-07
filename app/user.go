@@ -11,14 +11,14 @@ import (
 
 func (nova *Nova) HandleCreateUserId(c *gin.Context) {
 	// create userId
-	var userId UserID
+	var userId string
 	logger.Infof("handle request create userId")
 	// generate userId
-	userId.UserId = uuid.New().String()
-	logger.Debugf("generate userId: %v", userId.UserId)
+	userId = uuid.New().String()
+	logger.Debugf("generate userId: %v", userId)
 	// return response
 	nova.response201Created(c, userId)
-	logger.Infof("response status code: %v, body: %v", http.StatusCreated, userId.UserId)
+	logger.Infof("response status code: %v, body: %v", http.StatusCreated, userId)
 	return
 }
 
@@ -46,7 +46,7 @@ func (nova *Nova) HandleQueryUserId(c *gin.Context) {
 	logger.Debugf("successfully query user from data cache")
 	// return response
 	nova.response200OK(c, userId)
-	logger.Infof("response status code: %v, body: %v", http.StatusOK, userId.UserId)
+	logger.Infof("response status code: %v, body: %v", http.StatusOK, userId)
 	return
 }
 
@@ -589,17 +589,17 @@ func (nova *Nova) updateUserInDatabase(userId string) error {
 	return nil
 }
 
-func (nova *Nova) queryUserFromDataCache(userName UserName) (UserID, error) {
+func (nova *Nova) queryUserFromDataCache(userName UserName) (string, error) {
 	// enable user cache write lock
 	nova.cache.userCache.mutex.RLock()
 	defer nova.cache.userCache.mutex.RUnlock()
 	// search & delete user from data cache
 	for k, v := range nova.cache.userCache.userSet {
 		if v.Username == userName.Username {
-			return UserID{UserId: nova.cache.userCache.userSet[k].UserId}, nil
+			return nova.cache.userCache.userSet[k].UserId, nil
 		}
 	}
-	return UserID{}, errors.New("userId not found")
+	return "", errors.New("userId not found")
 }
 
 func (nova *Nova) response200OK(c *gin.Context, body any) {

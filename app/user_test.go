@@ -24,7 +24,7 @@ func setupTestRouter() *gin.Engine {
 	// create router group for nova
 	novaService := router.Group("nova/v1")
 	{
-		novaService.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "hello Gin\n") })
+		novaService.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "hello Nova\n") })
 		/* user management */
 		// userId related
 		novaService.POST("/user/userId", nova.HandleCreateUserId)
@@ -65,7 +65,7 @@ func TestNova_HandleCreateUserId(t *testing.T) {
 	}
 	router.ServeHTTP(w, request)
 	// return response
-	var response UserID
+	var response string
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	if err != nil {
 		t.Errorf("error unmarshal response: %v", err)
@@ -73,7 +73,7 @@ func TestNova_HandleCreateUserId(t *testing.T) {
 	// validate response
 	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
-	assert.NoError(t, uuid.Validate(response.UserId))
+	assert.NoError(t, uuid.Validate(response))
 }
 
 func BenchmarkNova_HandleCreateUserId(b *testing.B) {
@@ -100,7 +100,7 @@ func BenchmarkNova_HandleCreateUserId(b *testing.B) {
 		}
 		router.ServeHTTP(w, request)
 		// return response
-		var response UserID
+		var response string
 		err = json.Unmarshal(w.Body.Bytes(), &response)
 		if err != nil {
 			b.Errorf("error unmarshal response: %v", err)
@@ -108,7 +108,7 @@ func BenchmarkNova_HandleCreateUserId(b *testing.B) {
 		// validate response
 		assert.Equal(b, http.StatusCreated, w.Code)
 		assert.Equal(b, "application/json", w.Header().Get("Content-Type"))
-		assert.NoError(b, uuid.Validate(response.UserId))
+		assert.NoError(b, uuid.Validate(response))
 	}
 }
 
@@ -136,7 +136,7 @@ func BenchmarkNova_HandleCreateUserIdParallel(b *testing.B) {
 			}
 			router.ServeHTTP(w, request)
 			// return response
-			var response UserID
+			var response string
 			err = json.Unmarshal(w.Body.Bytes(), &response)
 			if err != nil {
 				b.Errorf("error unmarshal response: %v", err)
@@ -144,7 +144,7 @@ func BenchmarkNova_HandleCreateUserIdParallel(b *testing.B) {
 			// validate response
 			assert.Equal(b, http.StatusCreated, w.Code)
 			assert.Equal(b, "application/json", w.Header().Get("Content-Type"))
-			assert.NoError(b, uuid.Validate(response.UserId))
+			assert.NoError(b, uuid.Validate(response))
 		}
 	})
 }
@@ -175,7 +175,7 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	}
 	router.ServeHTTP(wUserId, reqUserId)
 	// return response
-	var resUserId UserID
+	var resUserId string
 	err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 	if err != nil {
 		t.Errorf("error unmarshal response: %v", err)
@@ -183,12 +183,12 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	// validate response
 	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
-	assert.NoError(t, uuid.Validate(resUserId.UserId))
+	assert.NoError(t, uuid.Validate(resUserId))
 	/* create user */
 	// request content
 	url = server.URL + "/nova/v1/user"
 	user := User{
-		UserId:      resUserId.UserId,
+		UserId:      resUserId,
 		Username:    "alice",
 		Password:    "123456",
 		PhoneNumber: "+1412387",
@@ -202,7 +202,7 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	}
 	// request create user
 	wUser := httptest.NewRecorder()
-	reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -243,7 +243,7 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	reqUser2.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(wUser2, reqUser2)
 	// return response
-	var resUserId2 UserID
+	var resUserId2 string
 	err = json.Unmarshal(wUser2.Body.Bytes(), &resUserId2)
 	if err != nil {
 		t.Errorf("error unmarshal response: %v", err)
@@ -251,8 +251,8 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	// validate response
 	assert.Equal(t, http.StatusOK, wUser2.Code)
 	assert.Equal(t, "application/json", wUser2.Header().Get("Content-Type"))
-	assert.NoError(t, uuid.Validate(resUserId2.UserId))
-	assert.Equal(t, resUserId.UserId, resUserId2.UserId)
+	assert.NoError(t, uuid.Validate(resUserId2))
+	assert.Equal(t, resUserId, resUserId2)
 }
 
 func TestNova_HandleCreateUser(t *testing.T) {
@@ -279,7 +279,7 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	}
 	router.ServeHTTP(wUserId, reqUserId)
 	// return response
-	var resUserId UserID
+	var resUserId string
 	err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 	if err != nil {
 		t.Errorf("error unmarshal response: %v", err)
@@ -287,12 +287,12 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	// validate response
 	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
-	assert.NoError(t, uuid.Validate(resUserId.UserId))
+	assert.NoError(t, uuid.Validate(resUserId))
 	/* create user */
 	// request content
 	url = server.URL + "/nova/v1/user"
 	user := User{
-		UserId:      resUserId.UserId,
+		UserId:      resUserId,
 		Username:    "alice",
 		Password:    "123456",
 		PhoneNumber: "+1412387",
@@ -306,7 +306,7 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	}
 	// request create user
 	wUser := httptest.NewRecorder()
-	reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -356,7 +356,7 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 		}
 		router.ServeHTTP(wUserId, reqUserId)
 		// return response
-		var resUserId UserID
+		var resUserId string
 		err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 		if err != nil {
 			b.Errorf("error unmarshal response: %v", err)
@@ -364,12 +364,12 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 		// validate response
 		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-		assert.NoError(b, uuid.Validate(resUserId.UserId))
+		assert.NoError(b, uuid.Validate(resUserId))
 		/* create user */
 		// request content
 		url = server.URL + "/nova/v1/user"
 		user := User{
-			UserId:      resUserId.UserId,
+			UserId:      resUserId,
 			Username:    "alice",
 			Password:    "123456",
 			PhoneNumber: "+1412387",
@@ -383,7 +383,7 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 		}
 		// request create user
 		wUser := httptest.NewRecorder()
-		reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+		reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -435,7 +435,7 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 			}
 			router.ServeHTTP(wUserId, reqUserId)
 			// return response
-			var resUserId UserID
+			var resUserId string
 			err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 			if err != nil {
 				b.Errorf("error unmarshal response: %v", err)
@@ -443,12 +443,12 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 			// validate response
 			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-			assert.NoError(b, uuid.Validate(resUserId.UserId))
+			assert.NoError(b, uuid.Validate(resUserId))
 			/* create user */
 			// request content
 			url = server.URL + "/nova/v1/user"
 			user := User{
-				UserId:      resUserId.UserId,
+				UserId:      resUserId,
 				Username:    "alice",
 				Password:    "123456",
 				PhoneNumber: "+1412387",
@@ -462,7 +462,7 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 			}
 			// request create user
 			wUser := httptest.NewRecorder()
-			reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+			reqUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
@@ -514,7 +514,7 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	}
 	router.ServeHTTP(wUserId, reqUserId)
 	// return response
-	var resUserId UserID
+	var resUserId string
 	err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 	if err != nil {
 		t.Errorf("error unmarshal response: %v", err)
@@ -522,12 +522,12 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	// validate response
 	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
-	assert.NoError(t, uuid.Validate(resUserId.UserId))
+	assert.NoError(t, uuid.Validate(resUserId))
 	/* create user */
 	// request content
 	url = server.URL + "/nova/v1/user"
 	user := User{
-		UserId:      resUserId.UserId,
+		UserId:      resUserId,
 		Username:    "alice",
 		Password:    "123456",
 		PhoneNumber: "+1412387",
@@ -541,7 +541,7 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	}
 	// request create user
 	wCreateUser := httptest.NewRecorder()
-	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -568,7 +568,7 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	// request delete user
 	wDeleteUser := httptest.NewRecorder()
-	reqDeleteUser, err := http.NewRequest(http.MethodDelete, url+"/"+resUserId.UserId, nil)
+	reqDeleteUser, err := http.NewRequest(http.MethodDelete, url+"/"+resUserId, nil)
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -605,7 +605,7 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 		}
 		router.ServeHTTP(wUserId, reqUserId)
 		// return response
-		var resUserId UserID
+		var resUserId string
 		err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 		if err != nil {
 			b.Errorf("error unmarshal response: %v", err)
@@ -613,12 +613,12 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 		// validate response
 		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-		assert.NoError(b, uuid.Validate(resUserId.UserId))
+		assert.NoError(b, uuid.Validate(resUserId))
 		/* create user */
 		// request content
 		url = server.URL + "/nova/v1/user"
 		user := User{
-			UserId:      resUserId.UserId,
+			UserId:      resUserId,
 			Username:    "alice",
 			Password:    "123456",
 			PhoneNumber: "+1412387",
@@ -632,7 +632,7 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 		}
 		// request create user
 		wCreateUser := httptest.NewRecorder()
-		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -659,7 +659,7 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		// request delete user
 		wDeleteUser := httptest.NewRecorder()
-		reqDeleteUser, err := http.NewRequest(http.MethodDelete, url+"/"+resUserId.UserId, nil)
+		reqDeleteUser, err := http.NewRequest(http.MethodDelete, url+"/"+resUserId, nil)
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -698,7 +698,7 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 			}
 			router.ServeHTTP(wUserId, reqUserId)
 			// return response
-			var resUserId UserID
+			var resUserId string
 			err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 			if err != nil {
 				b.Errorf("error unmarshal response: %v", err)
@@ -706,12 +706,12 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 			// validate response
 			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-			assert.NoError(b, uuid.Validate(resUserId.UserId))
+			assert.NoError(b, uuid.Validate(resUserId))
 			/* create user */
 			// request content
 			url = server.URL + "/nova/v1/user"
 			user := User{
-				UserId:      resUserId.UserId,
+				UserId:      resUserId,
 				Username:    "alice",
 				Password:    "123456",
 				PhoneNumber: "+1412387",
@@ -725,7 +725,7 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 			}
 			// request create user
 			wCreateUser := httptest.NewRecorder()
-			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
@@ -752,7 +752,7 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			// request delete user
 			wDeleteUser := httptest.NewRecorder()
-			reqDeleteUser, err := http.NewRequest(http.MethodDelete, url+"/"+resUserId.UserId, nil)
+			reqDeleteUser, err := http.NewRequest(http.MethodDelete, url+"/"+resUserId, nil)
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
@@ -789,7 +789,7 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	}
 	router.ServeHTTP(wUserId, reqUserId)
 	// return response
-	var resUserId UserID
+	var resUserId string
 	err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 	if err != nil {
 		t.Errorf("error unmarshal response: %v", err)
@@ -797,12 +797,12 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	// validate response
 	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
-	assert.NoError(t, uuid.Validate(resUserId.UserId))
+	assert.NoError(t, uuid.Validate(resUserId))
 	/* create user */
 	// request content
 	url = server.URL + "/nova/v1/user"
 	user := User{
-		UserId:      resUserId.UserId,
+		UserId:      resUserId,
 		Username:    "alice",
 		Password:    "123456",
 		PhoneNumber: "+1412387",
@@ -816,7 +816,7 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	}
 	// request create user
 	wCreateUser := httptest.NewRecorder()
-	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -843,7 +843,7 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	// request query user
 	wQueryUser := httptest.NewRecorder()
-	reqQueryUser, err := http.NewRequest(http.MethodGet, url+"/"+resUserId.UserId, nil)
+	reqQueryUser, err := http.NewRequest(http.MethodGet, url+"/"+resUserId, nil)
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -894,7 +894,7 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 		}
 		router.ServeHTTP(wUserId, reqUserId)
 		// return response
-		var resUserId UserID
+		var resUserId string
 		err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 		if err != nil {
 			b.Errorf("error unmarshal response: %v", err)
@@ -902,12 +902,12 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 		// validate response
 		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-		assert.NoError(b, uuid.Validate(resUserId.UserId))
+		assert.NoError(b, uuid.Validate(resUserId))
 		/* create user */
 		// request content
 		url = server.URL + "/nova/v1/user"
 		user := User{
-			UserId:      resUserId.UserId,
+			UserId:      resUserId,
 			Username:    "alice",
 			Password:    "123456",
 			PhoneNumber: "+1412387",
@@ -921,7 +921,7 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 		}
 		// request create user
 		wCreateUser := httptest.NewRecorder()
-		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -948,7 +948,7 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		// request query user
 		wQueryUser := httptest.NewRecorder()
-		reqQueryUser, err := http.NewRequest(http.MethodGet, url+"/"+resUserId.UserId, nil)
+		reqQueryUser, err := http.NewRequest(http.MethodGet, url+"/"+resUserId, nil)
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -1001,7 +1001,7 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 			}
 			router.ServeHTTP(wUserId, reqUserId)
 			// return response
-			var resUserId UserID
+			var resUserId string
 			err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 			if err != nil {
 				b.Errorf("error unmarshal response: %v", err)
@@ -1009,12 +1009,12 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 			// validate response
 			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-			assert.NoError(b, uuid.Validate(resUserId.UserId))
+			assert.NoError(b, uuid.Validate(resUserId))
 			/* create user */
 			// request content
 			url = server.URL + "/nova/v1/user"
 			user := User{
-				UserId:      resUserId.UserId,
+				UserId:      resUserId,
 				Username:    "alice",
 				Password:    "123456",
 				PhoneNumber: "+1412387",
@@ -1028,7 +1028,7 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 			}
 			// request create user
 			wCreateUser := httptest.NewRecorder()
-			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
@@ -1055,7 +1055,7 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			// request query user
 			wQueryUser := httptest.NewRecorder()
-			reqQueryUser, err := http.NewRequest(http.MethodGet, url+"/"+resUserId.UserId, nil)
+			reqQueryUser, err := http.NewRequest(http.MethodGet, url+"/"+resUserId, nil)
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
@@ -1106,7 +1106,7 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	}
 	router.ServeHTTP(wUserId, reqUserId)
 	// return response
-	var resUserId UserID
+	var resUserId string
 	err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 	if err != nil {
 		t.Errorf("error unmarshal response: %v", err)
@@ -1114,12 +1114,12 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	// validate response
 	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
-	assert.NoError(t, uuid.Validate(resUserId.UserId))
+	assert.NoError(t, uuid.Validate(resUserId))
 	/* create user */
 	// request content
 	url = server.URL + "/nova/v1/user"
 	user := User{
-		UserId:      resUserId.UserId,
+		UserId:      resUserId,
 		Username:    "alice",
 		Password:    "123456",
 		PhoneNumber: "+1412387",
@@ -1133,7 +1133,7 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	}
 	// request create user
 	wCreateUser := httptest.NewRecorder()
-	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -1159,7 +1159,7 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	// request content
 	url = server.URL + "/nova/v1/user"
 	userNew := User{
-		UserId:      resUserId.UserId,
+		UserId:      resUserId,
 		Username:    "bob",
 		Password:    "888888",
 		PhoneNumber: "+2839822",
@@ -1173,7 +1173,7 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	}
 	// request update user
 	wUpdateUser := httptest.NewRecorder()
-	reqUpdateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId.UserId, bytes.NewReader(bodyNew))
+	reqUpdateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId, bytes.NewReader(bodyNew))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -1224,7 +1224,7 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 		}
 		router.ServeHTTP(wUserId, reqUserId)
 		// return response
-		var resUserId UserID
+		var resUserId string
 		err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 		if err != nil {
 			b.Errorf("error unmarshal response: %v", err)
@@ -1232,12 +1232,12 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 		// validate response
 		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-		assert.NoError(b, uuid.Validate(resUserId.UserId))
+		assert.NoError(b, uuid.Validate(resUserId))
 		/* create user */
 		// request content
 		url = server.URL + "/nova/v1/user"
 		user := User{
-			UserId:      resUserId.UserId,
+			UserId:      resUserId,
 			Username:    "alice",
 			Password:    "123456",
 			PhoneNumber: "+1412387",
@@ -1251,7 +1251,7 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 		}
 		// request create user
 		wCreateUser := httptest.NewRecorder()
-		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -1277,7 +1277,7 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 		// request content
 		url = server.URL + "/nova/v1/user"
 		userNew := User{
-			UserId:      resUserId.UserId,
+			UserId:      resUserId,
 			Username:    "bob",
 			Password:    "888888",
 			PhoneNumber: "+2839822",
@@ -1291,7 +1291,7 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 		}
 		// request update user
 		wUpdateUser := httptest.NewRecorder()
-		reqUpdateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId.UserId, bytes.NewReader(bodyNew))
+		reqUpdateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId, bytes.NewReader(bodyNew))
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -1344,7 +1344,7 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 			}
 			router.ServeHTTP(wUserId, reqUserId)
 			// return response
-			var resUserId UserID
+			var resUserId string
 			err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 			if err != nil {
 				b.Errorf("error unmarshal response: %v", err)
@@ -1352,12 +1352,12 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 			// validate response
 			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-			assert.NoError(b, uuid.Validate(resUserId.UserId))
+			assert.NoError(b, uuid.Validate(resUserId))
 			/* create user */
 			// request content
 			url = server.URL + "/nova/v1/user"
 			user := User{
-				UserId:      resUserId.UserId,
+				UserId:      resUserId,
 				Username:    "alice",
 				Password:    "123456",
 				PhoneNumber: "+1412387",
@@ -1371,7 +1371,7 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 			}
 			// request create user
 			wCreateUser := httptest.NewRecorder()
-			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
@@ -1397,7 +1397,7 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 			// request content
 			url = server.URL + "/nova/v1/user"
 			userNew := User{
-				UserId:      resUserId.UserId,
+				UserId:      resUserId,
 				Username:    "bob",
 				Password:    "888888",
 				PhoneNumber: "+2839822",
@@ -1411,7 +1411,7 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 			}
 			// request update user
 			wUpdateUser := httptest.NewRecorder()
-			reqUpdateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId.UserId, bytes.NewReader(bodyNew))
+			reqUpdateUser, err := http.NewRequest(http.MethodPut, url+"/"+resUserId, bytes.NewReader(bodyNew))
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
@@ -1462,7 +1462,7 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	}
 	router.ServeHTTP(wUserId, reqUserId)
 	// return response
-	var resUserId UserID
+	var resUserId string
 	err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 	if err != nil {
 		t.Errorf("error unmarshal response: %v", err)
@@ -1470,12 +1470,12 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	// validate response
 	assert.Equal(t, http.StatusCreated, wUserId.Code)
 	assert.Equal(t, "application/json", wUserId.Header().Get("Content-Type"))
-	assert.NoError(t, uuid.Validate(resUserId.UserId))
+	assert.NoError(t, uuid.Validate(resUserId))
 	/* create user */
 	// request content
 	url = server.URL + "/nova/v1/user"
 	user := User{
-		UserId:      resUserId.UserId,
+		UserId:      resUserId,
 		Username:    "alice",
 		Password:    "123456",
 		PhoneNumber: "+1412387",
@@ -1489,7 +1489,7 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	}
 	// request create user
 	wCreateUser := httptest.NewRecorder()
-	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+	reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -1515,7 +1515,7 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	// request content
 	url = server.URL + "/nova/v1/user"
 	userNew := User{
-		UserId:      resUserId.UserId,
+		UserId:      resUserId,
 		Username:    "alice",
 		Password:    "123456",
 		PhoneNumber: "+1412387",
@@ -1527,7 +1527,7 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	}
 	// request modify user
 	wModifyUser := httptest.NewRecorder()
-	reqModifyUser, err := http.NewRequest(http.MethodPatch, url+"/"+resUserId.UserId, bytes.NewReader(bodyNew))
+	reqModifyUser, err := http.NewRequest(http.MethodPatch, url+"/"+resUserId, bytes.NewReader(bodyNew))
 	if err != nil {
 		t.Errorf("error creating request: %v", err)
 	}
@@ -1578,7 +1578,7 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 		}
 		router.ServeHTTP(wUserId, reqUserId)
 		// return response
-		var resUserId UserID
+		var resUserId string
 		err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 		if err != nil {
 			b.Errorf("error unmarshal response: %v", err)
@@ -1586,12 +1586,12 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 		// validate response
 		assert.Equal(b, http.StatusCreated, wUserId.Code)
 		assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-		assert.NoError(b, uuid.Validate(resUserId.UserId))
+		assert.NoError(b, uuid.Validate(resUserId))
 		/* create user */
 		// request content
 		url = server.URL + "/nova/v1/user"
 		user := User{
-			UserId:      resUserId.UserId,
+			UserId:      resUserId,
 			Username:    "alice",
 			Password:    "123456",
 			PhoneNumber: "+1412387",
@@ -1605,7 +1605,7 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 		}
 		// request create user
 		wCreateUser := httptest.NewRecorder()
-		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+		reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -1631,7 +1631,7 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 		// request content
 		url = server.URL + "/nova/v1/user"
 		userNew := User{
-			UserId:      resUserId.UserId,
+			UserId:      resUserId,
 			Username:    "alice",
 			Password:    "123456",
 			PhoneNumber: "+1412387",
@@ -1643,7 +1643,7 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 		}
 		// request modify user
 		wModifyUser := httptest.NewRecorder()
-		reqModifyUser, err := http.NewRequest(http.MethodPatch, url+"/"+resUserId.UserId, bytes.NewReader(bodyNew))
+		reqModifyUser, err := http.NewRequest(http.MethodPatch, url+"/"+resUserId, bytes.NewReader(bodyNew))
 		if err != nil {
 			b.Errorf("error creating request: %v", err)
 		}
@@ -1696,7 +1696,7 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 			}
 			router.ServeHTTP(wUserId, reqUserId)
 			// return response
-			var resUserId UserID
+			var resUserId string
 			err = json.Unmarshal(wUserId.Body.Bytes(), &resUserId)
 			if err != nil {
 				b.Errorf("error unmarshal response: %v", err)
@@ -1704,12 +1704,12 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 			// validate response
 			assert.Equal(b, http.StatusCreated, wUserId.Code)
 			assert.Equal(b, "application/json", wUserId.Header().Get("Content-Type"))
-			assert.NoError(b, uuid.Validate(resUserId.UserId))
+			assert.NoError(b, uuid.Validate(resUserId))
 			/* create user */
 			// request content
 			url = server.URL + "/nova/v1/user"
 			user := User{
-				UserId:      resUserId.UserId,
+				UserId:      resUserId,
 				Username:    "alice",
 				Password:    "123456",
 				PhoneNumber: "+1412387",
@@ -1723,7 +1723,7 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 			}
 			// request create user
 			wCreateUser := httptest.NewRecorder()
-			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId.UserId, bytes.NewReader(body))
+			reqCreateUser, err := http.NewRequest(http.MethodPost, url+"/"+resUserId, bytes.NewReader(body))
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
@@ -1749,7 +1749,7 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 			// request content
 			url = server.URL + "/nova/v1/user"
 			userNew := User{
-				UserId:      resUserId.UserId,
+				UserId:      resUserId,
 				Username:    "alice",
 				Password:    "123456",
 				PhoneNumber: "+1412387",
@@ -1761,7 +1761,7 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 			}
 			// request modify user
 			wModifyUser := httptest.NewRecorder()
-			reqModifyUser, err := http.NewRequest(http.MethodPatch, url+"/"+resUserId.UserId, bytes.NewReader(bodyNew))
+			reqModifyUser, err := http.NewRequest(http.MethodPatch, url+"/"+resUserId, bytes.NewReader(bodyNew))
 			if err != nil {
 				b.Errorf("error creating request: %v", err)
 			}
