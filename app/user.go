@@ -24,7 +24,7 @@ func (nova *Nova) HandleCreateUserId(c *gin.Context) {
 
 func (nova *Nova) HandleQueryUserId(c *gin.Context) {
 	// query userId
-	var userName UserName
+	var userName string
 	logger.Infof("handle request query userId")
 	// request body should bind json
 	logger.Debugf("request body bind json format")
@@ -589,13 +589,13 @@ func (nova *Nova) updateUserInDatabase(userId string) error {
 	return nil
 }
 
-func (nova *Nova) queryUserFromDataCache(userName UserName) (string, error) {
+func (nova *Nova) queryUserFromDataCache(userName string) (string, error) {
 	// enable user cache write lock
 	nova.cache.userCache.mutex.RLock()
 	defer nova.cache.userCache.mutex.RUnlock()
 	// search & delete user from data cache
 	for k, v := range nova.cache.userCache.userSet {
-		if v.Username == userName.Username {
+		if v.Username == userName {
 			return nova.cache.userCache.userSet[k].UserId, nil
 		}
 	}

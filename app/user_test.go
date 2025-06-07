@@ -227,9 +227,7 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	/* query userId */
 	// request content
 	url = server.URL + "/nova/v1/user/userId"
-	userName := UserName{
-		Username: "alice",
-	}
+	userName := "alice"
 	bodyNew, err := json.Marshal(userName)
 	if err != nil {
 		t.Errorf("error marshal username: %v", err)

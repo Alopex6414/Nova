@@ -1,9 +1,5 @@
 package app
 
-type UserName struct {
-	Username string `json:"username" yaml:"username" binding:"required"`
-}
-
 type User struct {
 	UserId      string `json:"userId" yaml:"userId" binding:"required"`
 	Username    string `json:"username" yaml:"username" binding:"required"`
