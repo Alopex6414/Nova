@@ -246,3 +246,30 @@ func (db *DB) QueryUsers() ([]*User, error) {
 	}
 	return users, nil
 }
+
+func (db *DB) QueryUsersContext(ctx context.Context) ([]*User, error) {
+	// query users
+	query := `
+	SELECT userId, username, password, phoneNumber, email, address, company
+	FROM users
+	`
+	// execute query users
+	rows, err := db.sqliteDB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch users from database
+	var users []*User
+	for rows.Next() {
+		user := &User{}
+		if err := rows.Scan(&user.UserId, &user.Username, &user.Password, &user.PhoneNumber, &user.Email, &user.Address, &user.Company); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
+}

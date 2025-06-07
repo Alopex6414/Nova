@@ -85,6 +85,18 @@ func (nova *Nova) Init() {
 		os.Exit(6)
 	}
 	logger.Info("Successfully create tables.")
+	// query users from database
+	logger.Info("Query users from database...")
+	users, err := nova.db.QueryUsers()
+	if err != nil {
+		logger.Fatalf("Failed to query users from database: %s\n", err)
+		fmt.Printf("Failed to query users from database: %s\n", err)
+		os.Exit(7)
+	}
+	for _, user := range users {
+		nova.cache.userCache.userSet = append(nova.cache.userCache.userSet, *user)
+	}
+	logger.Info("Successfully query users from database.")
 }
 
 func (nova *Nova) Start() {
