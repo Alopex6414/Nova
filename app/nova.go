@@ -96,7 +96,7 @@ func (nova *Nova) Start() {
 	// create router group for nova
 	novaService := router.Group("nova/v1")
 	{
-		novaService.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "hello Gin\n") })
+		novaService.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "hello Nova\n") })
 		/* user management */
 		// userId related
 		novaService.POST("/user/userId", nova.HandleCreateUserId)
