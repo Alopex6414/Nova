@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -44,6 +45,14 @@ func startTestService() (*httptest.Server, *gin.Engine) {
 	return httptest.NewServer(router), router
 }
 
+func removeDatabase(name string) error {
+	err := os.Remove(name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func TestNova_HandleCreateUserId(t *testing.T) {
 	/*--------------------------------------------------------------------------------
 	// Test Case: TestNova_HandleCreateUserId
@@ -52,6 +61,8 @@ func TestNova_HandleCreateUserId(t *testing.T) {
 	// 1. send CreateUserId request by using POST method
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -84,6 +95,8 @@ func BenchmarkNova_HandleCreateUserId(b *testing.B) {
 	// 1. send CreateUserId request by using POST method
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -120,6 +133,8 @@ func BenchmarkNova_HandleCreateUserIdParallel(b *testing.B) {
 	// 1. send CreateUserId request by using POST method
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -161,6 +176,8 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	// 5. send QueryUserId request with userName information by using GET method
 	// 6. receive QueryUserId response with userId information by using 200 Created Code
 	---------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -263,6 +280,8 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -338,6 +357,8 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -416,6 +437,8 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -498,6 +521,8 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	// 5. send DeleteUser request with userId by using DELETE method
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -587,6 +612,8 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 	// 5. send DeleteUser request with userId by using DELETE method
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -679,6 +706,8 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 	// 5. send DeleteUser request with userId by using DELETE method
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -773,6 +802,8 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	// 5. send QueryUser request with userId by using GET method
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -876,6 +907,8 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 	// 5. send QueryUser request with userId by using GET method
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -982,6 +1015,8 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 	// 5. send QueryUser request with userId by using GET method
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1090,6 +1125,8 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	// 5. send UpdateUser request with userId by using PUT method
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1206,6 +1243,8 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 	// 5. send UpdateUser request with userId by using PUT method
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1325,6 +1364,8 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 	// 5. send UpdateUser request with userId by using PUT method
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1446,6 +1487,8 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	// 5. send ModifyUser request with userId by using PATCH method
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1560,6 +1603,8 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 	// 5. send ModifyUser request with userId by using PATCH method
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1677,6 +1722,8 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 	// 5. send ModifyUser request with userId by using PATCH method
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
+	// remove database
+	_ = removeDatabase("nova.db")
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
