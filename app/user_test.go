@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	. "nova/utils"
 	"os"
 	"testing"
 )
@@ -45,8 +46,14 @@ func startTestService() (*httptest.Server, *gin.Engine) {
 	return httptest.NewServer(router), router
 }
 
-func removeDatabase(name string) error {
-	err := os.Remove(name)
+func resetTestCase() error {
+	// remove database
+	err := os.Remove("nova.db")
+	if err != nil {
+		return err
+	}
+	// remove logs
+	err = os.RemoveAll("logs/")
 	if err != nil {
 		return err
 	}
@@ -61,8 +68,8 @@ func TestNova_HandleCreateUserId(t *testing.T) {
 	// 1. send CreateUserId request by using POST method
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -95,8 +102,8 @@ func BenchmarkNova_HandleCreateUserId(b *testing.B) {
 	// 1. send CreateUserId request by using POST method
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -133,8 +140,8 @@ func BenchmarkNova_HandleCreateUserIdParallel(b *testing.B) {
 	// 1. send CreateUserId request by using POST method
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -176,8 +183,8 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	// 5. send QueryUserId request with userName information by using GET method
 	// 6. receive QueryUserId response with userId information by using 200 Created Code
 	---------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -206,9 +213,9 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	user := User{
 		UserId:      resUserId,
-		Username:    "alice",
-		Password:    "123456",
-		PhoneNumber: "+1412387",
+		Username:    RandomAlphabet(5),
+		Password:    RandomAlphabetAndNumber(8),
+		PhoneNumber: RandomNumber(11),
 		Email:       "alice@gmail.com",
 		Address:     "No.5, Wall Street, New York, USA",
 		Company:     "Apple Inc.",
@@ -244,7 +251,7 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	/* query userId */
 	// request content
 	url = server.URL + "/nova/v1/user/userId"
-	userName := "alice"
+	userName := user.Username
 	bodyNew, err := json.Marshal(userName)
 	if err != nil {
 		t.Errorf("error marshal username: %v", err)
@@ -280,8 +287,8 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -310,9 +317,9 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	user := User{
 		UserId:      resUserId,
-		Username:    "alice",
-		Password:    "123456",
-		PhoneNumber: "+1412387",
+		Username:    RandomAlphabet(5),
+		Password:    RandomAlphabetAndNumber(8),
+		PhoneNumber: RandomNumber(11),
 		Email:       "alice@gmail.com",
 		Address:     "No.5, Wall Street, New York, USA",
 		Company:     "Apple Inc.",
@@ -357,8 +364,8 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -389,9 +396,9 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		user := User{
 			UserId:      resUserId,
-			Username:    "alice",
-			Password:    "123456",
-			PhoneNumber: "+1412387",
+			Username:    RandomAlphabet(5),
+			Password:    RandomAlphabetAndNumber(8),
+			PhoneNumber: RandomNumber(11),
 			Email:       "alice@gmail.com",
 			Address:     "No.5, Wall Street, New York, USA",
 			Company:     "Apple Inc.",
@@ -437,8 +444,8 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 	// 3. send CreateUser request with user information by using POST method
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -470,9 +477,9 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			user := User{
 				UserId:      resUserId,
-				Username:    "alice",
-				Password:    "123456",
-				PhoneNumber: "+1412387",
+				Username:    RandomAlphabet(5),
+				Password:    RandomAlphabetAndNumber(8),
+				PhoneNumber: RandomNumber(11),
 				Email:       "alice@gmail.com",
 				Address:     "No.5, Wall Street, New York, USA",
 				Company:     "Apple Inc.",
@@ -521,8 +528,8 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	// 5. send DeleteUser request with userId by using DELETE method
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -551,9 +558,9 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	user := User{
 		UserId:      resUserId,
-		Username:    "alice",
-		Password:    "123456",
-		PhoneNumber: "+1412387",
+		Username:    RandomAlphabet(5),
+		Password:    RandomAlphabetAndNumber(8),
+		PhoneNumber: RandomNumber(11),
 		Email:       "alice@gmail.com",
 		Address:     "No.5, Wall Street, New York, USA",
 		Company:     "Apple Inc.",
@@ -612,8 +619,8 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 	// 5. send DeleteUser request with userId by using DELETE method
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -644,9 +651,9 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		user := User{
 			UserId:      resUserId,
-			Username:    "alice",
-			Password:    "123456",
-			PhoneNumber: "+1412387",
+			Username:    RandomAlphabet(5),
+			Password:    RandomAlphabetAndNumber(8),
+			PhoneNumber: RandomNumber(11),
 			Email:       "alice@gmail.com",
 			Address:     "No.5, Wall Street, New York, USA",
 			Company:     "Apple Inc.",
@@ -706,8 +713,8 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 	// 5. send DeleteUser request with userId by using DELETE method
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -739,9 +746,9 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			user := User{
 				UserId:      resUserId,
-				Username:    "alice",
-				Password:    "123456",
-				PhoneNumber: "+1412387",
+				Username:    RandomAlphabet(5),
+				Password:    RandomAlphabetAndNumber(8),
+				PhoneNumber: RandomNumber(11),
 				Email:       "alice@gmail.com",
 				Address:     "No.5, Wall Street, New York, USA",
 				Company:     "Apple Inc.",
@@ -802,8 +809,8 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	// 5. send QueryUser request with userId by using GET method
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -832,9 +839,9 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	user := User{
 		UserId:      resUserId,
-		Username:    "alice",
-		Password:    "123456",
-		PhoneNumber: "+1412387",
+		Username:    RandomAlphabet(5),
+		Password:    RandomAlphabetAndNumber(8),
+		PhoneNumber: RandomNumber(11),
 		Email:       "alice@gmail.com",
 		Address:     "No.5, Wall Street, New York, USA",
 		Company:     "Apple Inc.",
@@ -907,8 +914,8 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 	// 5. send QueryUser request with userId by using GET method
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -939,9 +946,9 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		user := User{
 			UserId:      resUserId,
-			Username:    "alice",
-			Password:    "123456",
-			PhoneNumber: "+1412387",
+			Username:    RandomAlphabet(5),
+			Password:    RandomAlphabetAndNumber(8),
+			PhoneNumber: RandomNumber(11),
 			Email:       "alice@gmail.com",
 			Address:     "No.5, Wall Street, New York, USA",
 			Company:     "Apple Inc.",
@@ -1015,8 +1022,8 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 	// 5. send QueryUser request with userId by using GET method
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1048,9 +1055,9 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			user := User{
 				UserId:      resUserId,
-				Username:    "alice",
-				Password:    "123456",
-				PhoneNumber: "+1412387",
+				Username:    RandomAlphabet(5),
+				Password:    RandomAlphabetAndNumber(8),
+				PhoneNumber: RandomNumber(11),
 				Email:       "alice@gmail.com",
 				Address:     "No.5, Wall Street, New York, USA",
 				Company:     "Apple Inc.",
@@ -1125,8 +1132,8 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	// 5. send UpdateUser request with userId by using PUT method
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1155,9 +1162,9 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	user := User{
 		UserId:      resUserId,
-		Username:    "alice",
-		Password:    "123456",
-		PhoneNumber: "+1412387",
+		Username:    RandomAlphabet(5),
+		Password:    RandomAlphabetAndNumber(8),
+		PhoneNumber: RandomNumber(11),
 		Email:       "alice@gmail.com",
 		Address:     "No.5, Wall Street, New York, USA",
 		Company:     "Apple Inc.",
@@ -1195,12 +1202,12 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	userNew := User{
 		UserId:      resUserId,
-		Username:    "bob",
-		Password:    "888888",
-		PhoneNumber: "+2839822",
-		Email:       "bob@gmail.com",
-		Address:     "No.101, New Street, Los Angle, USA",
-		Company:     "Microsoft",
+		Username:    user.Username,
+		Password:    RandomAlphabetAndNumber(8),
+		PhoneNumber: user.PhoneNumber,
+		Email:       user.Email,
+		Address:     user.Address,
+		Company:     user.Company,
 	}
 	bodyNew, err := json.Marshal(userNew)
 	if err != nil {
@@ -1243,8 +1250,8 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 	// 5. send UpdateUser request with userId by using PUT method
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1275,9 +1282,9 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		user := User{
 			UserId:      resUserId,
-			Username:    "alice",
-			Password:    "123456",
-			PhoneNumber: "+1412387",
+			Username:    RandomAlphabet(5),
+			Password:    RandomAlphabetAndNumber(8),
+			PhoneNumber: RandomNumber(11),
 			Email:       "alice@gmail.com",
 			Address:     "No.5, Wall Street, New York, USA",
 			Company:     "Apple Inc.",
@@ -1315,12 +1322,12 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		userNew := User{
 			UserId:      resUserId,
-			Username:    "bob",
-			Password:    "888888",
-			PhoneNumber: "+2839822",
-			Email:       "bob@gmail.com",
-			Address:     "No.101, New Street, Los Angle, USA",
-			Company:     "Microsoft",
+			Username:    user.Username,
+			Password:    RandomAlphabetAndNumber(8),
+			PhoneNumber: user.PhoneNumber,
+			Email:       user.Email,
+			Address:     user.Address,
+			Company:     user.Company,
 		}
 		bodyNew, err := json.Marshal(userNew)
 		if err != nil {
@@ -1364,8 +1371,8 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 	// 5. send UpdateUser request with userId by using PUT method
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1397,9 +1404,9 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			user := User{
 				UserId:      resUserId,
-				Username:    "alice",
-				Password:    "123456",
-				PhoneNumber: "+1412387",
+				Username:    RandomAlphabet(5),
+				Password:    RandomAlphabetAndNumber(8),
+				PhoneNumber: RandomNumber(11),
 				Email:       "alice@gmail.com",
 				Address:     "No.5, Wall Street, New York, USA",
 				Company:     "Apple Inc.",
@@ -1437,12 +1444,12 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			userNew := User{
 				UserId:      resUserId,
-				Username:    "bob",
-				Password:    "888888",
-				PhoneNumber: "+2839822",
-				Email:       "bob@gmail.com",
-				Address:     "No.101, New Street, Los Angle, USA",
-				Company:     "Microsoft",
+				Username:    user.Username,
+				Password:    RandomAlphabetAndNumber(8),
+				PhoneNumber: user.PhoneNumber,
+				Email:       user.Email,
+				Address:     user.Address,
+				Company:     user.Company,
 			}
 			bodyNew, err := json.Marshal(userNew)
 			if err != nil {
@@ -1487,8 +1494,8 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	// 5. send ModifyUser request with userId by using PATCH method
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1517,9 +1524,9 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	user := User{
 		UserId:      resUserId,
-		Username:    "alice",
-		Password:    "123456",
-		PhoneNumber: "+1412387",
+		Username:    RandomAlphabet(5),
+		Password:    RandomAlphabetAndNumber(8),
+		PhoneNumber: RandomNumber(11),
 		Email:       "alice@gmail.com",
 		Address:     "No.5, Wall Street, New York, USA",
 		Company:     "Apple Inc.",
@@ -1557,9 +1564,9 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	url = server.URL + "/nova/v1/user"
 	userNew := User{
 		UserId:      resUserId,
-		Username:    "alice",
-		Password:    "123456",
-		PhoneNumber: "+1412387",
+		Username:    user.Username,
+		Password:    RandomAlphabetAndNumber(8),
+		PhoneNumber: user.PhoneNumber,
 		Company:     "Microsoft",
 	}
 	bodyNew, err := json.Marshal(userNew)
@@ -1603,8 +1610,8 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 	// 5. send ModifyUser request with userId by using PATCH method
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1635,9 +1642,9 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		user := User{
 			UserId:      resUserId,
-			Username:    "alice",
-			Password:    "123456",
-			PhoneNumber: "+1412387",
+			Username:    RandomAlphabet(5),
+			Password:    RandomAlphabetAndNumber(8),
+			PhoneNumber: RandomNumber(11),
 			Email:       "alice@gmail.com",
 			Address:     "No.5, Wall Street, New York, USA",
 			Company:     "Apple Inc.",
@@ -1675,9 +1682,9 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 		url = server.URL + "/nova/v1/user"
 		userNew := User{
 			UserId:      resUserId,
-			Username:    "alice",
-			Password:    "123456",
-			PhoneNumber: "+1412387",
+			Username:    user.Username,
+			Password:    RandomAlphabetAndNumber(8),
+			PhoneNumber: user.PhoneNumber,
 			Company:     "Microsoft",
 		}
 		bodyNew, err := json.Marshal(userNew)
@@ -1722,8 +1729,8 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 	// 5. send ModifyUser request with userId by using PATCH method
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
-	// remove database
-	_ = removeDatabase("nova.db")
+	// reset test case
+	_ = resetTestCase()
 	// start http test service
 	server, router := startTestService()
 	defer server.Close()
@@ -1755,9 +1762,9 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			user := User{
 				UserId:      resUserId,
-				Username:    "alice",
-				Password:    "123456",
-				PhoneNumber: "+1412387",
+				Username:    RandomAlphabet(5),
+				Password:    RandomAlphabetAndNumber(8),
+				PhoneNumber: RandomNumber(11),
 				Email:       "alice@gmail.com",
 				Address:     "No.5, Wall Street, New York, USA",
 				Company:     "Apple Inc.",
@@ -1795,9 +1802,9 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 			url = server.URL + "/nova/v1/user"
 			userNew := User{
 				UserId:      resUserId,
-				Username:    "alice",
-				Password:    "123456",
-				PhoneNumber: "+1412387",
+				Username:    user.Username,
+				Password:    RandomAlphabetAndNumber(8),
+				PhoneNumber: user.PhoneNumber,
 				Company:     "Microsoft",
 			}
 			bodyNew, err := json.Marshal(userNew)
