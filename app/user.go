@@ -560,6 +560,7 @@ func (nova *Nova) queryUserInDatabase(userId string) error {
 	for k, v := range nova.cache.userCache.userSet {
 		if v.UserId == userId {
 			nova.cache.userCache.userSet[k] = *user
+			break
 		}
 	}
 	return nil
@@ -585,6 +586,34 @@ func (nova *Nova) updateUserInDatabase(userId string) error {
 	// update user in database
 	if err := nova.db.UpdateUser(&user); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (nova *Nova) queryUsersInDatabase() error {
+	// enable user cache write lock
+	nova.cache.userCache.mutex.Lock()
+	defer nova.cache.userCache.mutex.Unlock()
+	// query user from database
+	users, err := nova.db.QueryUsers()
+	if err != nil {
+		return err
+	}
+	// update user in data cache
+	for _, user := range users {
+		b := false
+		// update if user existed
+		for k, v := range nova.cache.userCache.userSet {
+			if v.UserId == user.UserId {
+				nova.cache.userCache.userSet[k] = *user
+				b = true
+				break
+			}
+		}
+		// create user if user not existed
+		if !b {
+			nova.cache.userCache.userSet = append(nova.cache.userCache.userSet)
+		}
 	}
 	return nil
 }
