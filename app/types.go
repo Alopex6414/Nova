@@ -22,3 +22,26 @@ type ProblemDetails struct {
 	Status int    `json:"status" yaml:"status"`
 	Cause  string `json:"cause" yaml:"cause"`
 }
+
+type QuestionSingleChoice struct {
+	Id             string           `json:"id" yaml:"id"`
+	Title          string           `json:"title" yaml:"title"`
+	Answers        []QuestionAnswer `json:"answers" yaml:"answers"`
+	StandardAnswer QuestionAnswer   `json:"standard_answer" yaml:"standard_answer"`
+}
+
+type QuestionMultipleChoice struct {
+	Id              string           `json:"id" yaml:"id"`
+	Title           string           `json:"title" yaml:"title"`
+	Answers         []QuestionAnswer `json:"answers" yaml:"answers"`
+	StandardAnswers []QuestionAnswer `json:"standard_answers" yaml:"standard_answers"`
+}
+
+type QuestionTitle struct {
+	TitleText string `json:"title_text" yaml:"title_text"`
+}
+
+type QuestionAnswer struct {
+	AnswerMark string `json:"answerMark" yaml:"answerMark" binding:"required"`
+	AnswerText string `json:"answerText" yaml:"answerText" binding:"required"`
+}
