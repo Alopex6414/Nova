@@ -72,6 +72,15 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		return
 	}
 	logger.Debugf("successfully check user is validate")
+	// update data cache by querying users in database
+	logger.Debugf("update data cache by querying users in database")
+	err = nova.queryUsersInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying users in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying users in database")
 	// check user existence
 	logger.Debugf("check user is existed")
 	if nova.isUserExisted(strings.ToLower(request.UserId)) {
@@ -80,6 +89,14 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 		return
 	}
 	logger.Debugf("successfully check user is existed")
+	// check userName or phoneNumber existence
+	logger.Debugf("check userName or phoneNumber is existed")
+	if nova.isUserNameOrPhoneExisted(request.Username, request.PhoneNumber) {
+		nova.response409Conflict(c, errors.New("userName or phoneNumber already exists"))
+		logger.Errorf("error check userName or phoneNumber is existed: %v", err)
+		return
+	}
+	logger.Debugf("successfully check userName or phoneNumber is existed")
 	// store created user in data cache
 	logger.Debugf("store user in data cache")
 	response := User{
@@ -372,6 +389,19 @@ func (nova *Nova) isUserExisted(userId string) bool {
 	// search userId in data cache
 	for _, v := range nova.cache.userCache.userSet {
 		if v.UserId == userId {
+			return true
+		}
+	}
+	return false
+}
+
+func (nova *Nova) isUserNameOrPhoneExisted(userName string, phoneNumber string) bool {
+	// enable user cache read lock
+	nova.cache.userCache.mutex.RLock()
+	defer nova.cache.userCache.mutex.RUnlock()
+	// search userId in data cache
+	for _, v := range nova.cache.userCache.userSet {
+		if v.Username == userName || v.PhoneNumber == phoneNumber {
 			return true
 		}
 	}
