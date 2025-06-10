@@ -137,6 +137,15 @@ func (nova *Nova) HandleDeleteUser(c *gin.Context) {
 		return
 	}
 	logger.Debugf("successfully check userId is validate")
+	// update data cache by querying users in database
+	logger.Debugf("update data cache by querying users in database")
+	err := nova.queryUsersInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying users in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying users in database")
 	// check user existence
 	logger.Debugf("check user is validate")
 	if !nova.isUserExisted(userId) {
