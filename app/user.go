@@ -193,6 +193,15 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 		return
 	}
 	logger.Debugf("successfully check user is validate")
+	// update data cache by querying users in database
+	logger.Debugf("update data cache by querying users in database")
+	err = nova.queryUsersInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying users in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying users in database")
 	// check user existence
 	logger.Debugf("check user is existed")
 	if !nova.isUserExisted(strings.ToLower(request.UserId)) {
@@ -237,6 +246,15 @@ func (nova *Nova) HandleQueryUser(c *gin.Context) {
 		return
 	}
 	logger.Debugf("successfully check userId is validate")
+	// update data cache by querying users in database
+	logger.Debugf("update data cache by querying users in database")
+	err := nova.queryUsersInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying users in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying users in database")
 	// check user existence
 	logger.Debugf("check user is existed")
 	if !nova.isUserExisted(userId) {
@@ -282,6 +300,15 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 	}
 	logger.Debugf("successfully bind request json format")
 	// check request body correctness
+	// update data cache by querying users in database
+	logger.Debugf("update data cache by querying users in database")
+	err = nova.queryUsersInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying users in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying users in database")
 	// check user existence
 	logger.Debugf("check user existence")
 	if !nova.isUserExisted(strings.ToLower(request.UserId)) {
@@ -344,6 +371,15 @@ func (nova *Nova) HandleCreateUserLogin(c *gin.Context) {
 		return
 	}
 	logger.Debugf("successfully check userId is validate")
+	// update data cache by querying users in database
+	logger.Debugf("update data cache by querying users in database")
+	err = nova.queryUsersInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying users in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying users in database")
 	// check user existence
 	logger.Debugf("check user is existed")
 	if !nova.isUserExisted(userId) {
@@ -465,12 +501,14 @@ func (nova *Nova) modifyUserInDataCache(user User) (User, error) {
 	// replace user in data cache
 	for k, v := range nova.cache.userCache.userSet {
 		if v.UserId == user.UserId {
+			// userName should not be changed
 			if user.Username != "" {
 				nova.cache.userCache.userSet[k].Username = user.Username
 			}
 			if user.Password != "" {
 				nova.cache.userCache.userSet[k].Password = user.Password
 			}
+			// phoneNumber should not be changed
 			if user.PhoneNumber != "" {
 				nova.cache.userCache.userSet[k].PhoneNumber = user.PhoneNumber
 			}
@@ -509,6 +547,7 @@ func (nova *Nova) updateUserInDataCache(user User) bool {
 	// replace user in data cache
 	for k, v := range nova.cache.userCache.userSet {
 		if v.UserId == user.UserId {
+			// userName and phoneNumber should not be changed
 			nova.cache.userCache.userSet[k] = user
 			return true
 		}
