@@ -477,6 +477,14 @@ func (nova *Nova) updateUserInDataCache(user User) bool {
 	return false
 }
 
+func (nova *Nova) queryUsersInDataCache() ([]User, error) {
+	// enable user cache read lock
+	nova.cache.userCache.mutex.RLock()
+	defer nova.cache.userCache.mutex.RUnlock()
+	// search & query users from data cache
+	return nova.cache.userCache.userSet, nil
+}
+
 func (nova *Nova) createUserInDatabase(userId string) error {
 	// enable user cache read lock
 	nova.cache.userCache.mutex.RLock()
