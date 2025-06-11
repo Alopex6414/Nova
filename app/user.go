@@ -91,7 +91,7 @@ func (nova *Nova) HandleCreateUser(c *gin.Context) {
 	logger.Debugf("successfully check user is existed")
 	// check userName or phoneNumber existence
 	logger.Debugf("check userName or phoneNumber is existed")
-	if nova.isUserNameOrPhoneExisted(request.Username, request.PhoneNumber) {
+	if nova.isUserNameOrPhoneExisted(request) {
 		nova.response409Conflict(c, errors.New("userName or phoneNumber already exists"))
 		logger.Errorf("error check userName or phoneNumber is existed: %v", err)
 		return
@@ -210,6 +210,14 @@ func (nova *Nova) HandleModifyUser(c *gin.Context) {
 		return
 	}
 	logger.Debugf("successfully check user is existed")
+	// check userName or phoneNumber is modified
+	logger.Debugf("check userName or phoneNumber is modified")
+	if nova.isUserNameOrPhoneModified(request) {
+		nova.response409Conflict(c, errors.New("userName or phoneNumber already been modified"))
+		logger.Errorf("error check userName or phoneNumber is modified: %v", err)
+		return
+	}
+	logger.Debugf("successfully check userName or phoneNumber is modified")
 	// store modified user in data cache
 	logger.Debugf("store modify user in data cache")
 	response, err := nova.modifyUserInDataCache(request)
@@ -317,6 +325,14 @@ func (nova *Nova) HandleUpdateUser(c *gin.Context) {
 		return
 	}
 	logger.Debugf("successfully check user existence")
+	// check userName or phoneNumber is modified
+	logger.Debugf("check userName or phoneNumber is modified")
+	if nova.isUserNameOrPhoneModified(request) {
+		nova.response409Conflict(c, errors.New("userName or phoneNumber already been modified"))
+		logger.Errorf("error check userName or phoneNumber is modified: %v", err)
+		return
+	}
+	logger.Debugf("successfully check userName or phoneNumber is modified")
 	// store updated user in data cache
 	logger.Debugf("update user in data cache")
 	response := User{
@@ -440,14 +456,31 @@ func (nova *Nova) isUserExisted(userId string) bool {
 	return false
 }
 
-func (nova *Nova) isUserNameOrPhoneExisted(userName string, phoneNumber string) bool {
+func (nova *Nova) isUserNameOrPhoneExisted(user User) bool {
 	// enable user cache read lock
 	nova.cache.userCache.mutex.RLock()
 	defer nova.cache.userCache.mutex.RUnlock()
 	// search userId in data cache
 	for _, v := range nova.cache.userCache.userSet {
-		if v.Username == userName || v.PhoneNumber == phoneNumber {
+		if v.Username == user.Username || v.PhoneNumber == user.PhoneNumber {
 			return true
+		}
+	}
+	return false
+}
+
+func (nova *Nova) isUserNameOrPhoneModified(user User) bool {
+	// enable user cache read lock
+	nova.cache.userCache.mutex.RLock()
+	defer nova.cache.userCache.mutex.RUnlock()
+	// search userId in data cache
+	for _, v := range nova.cache.userCache.userSet {
+		if v.UserId == user.UserId {
+			if v.Username != user.Username || v.PhoneNumber != user.PhoneNumber {
+				return true
+			} else {
+				return false
+			}
 		}
 	}
 	return false
