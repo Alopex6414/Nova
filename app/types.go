@@ -37,6 +37,13 @@ type QuestionMultipleChoice struct {
 	StandardAnswers []QuestionAnswer `json:"standard_answers" yaml:"standard_answers"`
 }
 
+type QuestionJudgement struct {
+	Id             string `json:"id" yaml:"id"`
+	Title          string `json:"title" yaml:"title"`
+	Answer         bool   `json:"answer" yaml:"answer"`
+	StandardAnswer bool   `json:"standard_answer" yaml:"standard_answer"`
+}
+
 type QuestionTitle struct {
 	TitleText string `json:"title_text" yaml:"title_text"`
 }
