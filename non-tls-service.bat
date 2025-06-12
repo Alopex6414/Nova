@@ -4,4 +4,4 @@
 
 :: Nova HTTP Service (Non-TLS) - Start
 cd bin
-./nova
+./nova http -ip localhost -port 8080
