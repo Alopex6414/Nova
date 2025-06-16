@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-func setupTestRouter() *gin.Engine {
+func setupUserTestRouter() *gin.Engine {
 	// create Nova instance
 	nova := New()
 	// initialize Nova instance
@@ -41,12 +41,12 @@ func setupTestRouter() *gin.Engine {
 	return router
 }
 
-func startTestService() (*httptest.Server, *gin.Engine) {
-	router := setupTestRouter()
+func startUserTestService() (*httptest.Server, *gin.Engine) {
+	router := setupUserTestRouter()
 	return httptest.NewServer(router), router
 }
 
-func resetTestCase() error {
+func resetUserTestCase() error {
 	// remove database
 	err := os.Remove("nova.db")
 	if err != nil {
@@ -69,9 +69,9 @@ func TestNova_HandleCreateUserId(t *testing.T) {
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	// request content
 	url := server.URL + "/nova/v1/user/userId"
@@ -103,9 +103,9 @@ func BenchmarkNova_HandleCreateUserId(b *testing.B) {
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	// start benchmark test
 	b.ResetTimer()
@@ -141,9 +141,9 @@ func BenchmarkNova_HandleCreateUserIdParallel(b *testing.B) {
 	// 2. receive CreateUserId response with created userId by using 201 Created Code
 	---------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -184,9 +184,9 @@ func TestNova_HandleQueryUserId(t *testing.T) {
 	// 6. receive QueryUserId response with userId information by using 200 Created Code
 	---------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	/* create userId */
 	// request content
@@ -290,9 +290,9 @@ func BenchmarkNova_HandleQueryUserId(b *testing.B) {
 	// 6. receive QueryUserId response with userId information by using 200 Created Code
 	---------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -399,9 +399,9 @@ func BenchmarkNova_HandleQueryUserIdParallel(b *testing.B) {
 	// 6. receive QueryUserId response with userId information by using 200 Created Code
 	---------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -508,9 +508,9 @@ func TestNova_HandleCreateUser(t *testing.T) {
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	/* create userId */
 	// request content
@@ -585,9 +585,9 @@ func BenchmarkNova_HandleCreateUser(b *testing.B) {
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -665,9 +665,9 @@ func BenchmarkNova_HandleCreateUserParallel(b *testing.B) {
 	// 4. receive CreateUser response with user information by using 201 Created Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -749,9 +749,9 @@ func TestNova_HandleDeleteUser(t *testing.T) {
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	/* create userId */
 	// request content
@@ -840,9 +840,9 @@ func BenchmarkNova_HandleDeleteUser(b *testing.B) {
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -934,9 +934,9 @@ func BenchmarkNova_HandleDeleteUserParallel(b *testing.B) {
 	// 6. receive DeleteUser request by using 204 No Content Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -1030,9 +1030,9 @@ func TestNova_HandleQueryUserUser(t *testing.T) {
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	/* create userId */
 	// request content
@@ -1135,9 +1135,9 @@ func BenchmarkNova_HandleQueryUser(b *testing.B) {
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1243,9 +1243,9 @@ func BenchmarkNova_HandleQueryUserParallel(b *testing.B) {
 	// 6. receive QueryUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -1353,9 +1353,9 @@ func TestNova_HandleUpdateUser(t *testing.T) {
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	/* create userId */
 	// request content
@@ -1471,9 +1471,9 @@ func BenchmarkNova_HandleUpdateUser(b *testing.B) {
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1592,9 +1592,9 @@ func BenchmarkNova_HandleUpdateUserParallel(b *testing.B) {
 	// 6. receive UpdateUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -1715,9 +1715,9 @@ func TestNova_HandleModifyUser(t *testing.T) {
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	/* create userId */
 	// request content
@@ -1831,9 +1831,9 @@ func BenchmarkNova_HandleModifyUser(b *testing.B) {
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1950,9 +1950,9 @@ func BenchmarkNova_HandleModifyUserParallel(b *testing.B) {
 	// 6. receive ModifyUser request by using 200 OK Code
 	----------------------------------------------------------------------------------*/
 	// reset test case
-	_ = resetTestCase()
+	_ = resetUserTestCase()
 	// start http test service
-	server, router := startTestService()
+	server, router := startUserTestService()
 	defer server.Close()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {

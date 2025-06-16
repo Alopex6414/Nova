@@ -122,6 +122,9 @@ func (nova *Nova) Start() {
 		// user login related
 		novaService.POST("/user/login/:userId", nova.HandleCreateUserLogin)
 		/* question management */
+		// questionId related
+		novaService.POST("/question/Id", nova.HandleCreateQuestionId)
+		// question related
 		novaService.POST("/question/:Id", nova.HandleCreateQuestion)
 		novaService.PUT("/question/:Id", nova.HandleUpdateQuestion)
 		novaService.DELETE("/question/:Id", nova.HandleDeleteQuestion)
