@@ -121,6 +121,12 @@ func (nova *Nova) Start() {
 		novaService.GET("/user/:userId", nova.HandleQueryUser)
 		// user login related
 		novaService.POST("/user/login/:userId", nova.HandleCreateUserLogin)
+		/* question management */
+		novaService.POST("/question/:Id", nova.HandleCreateQuestion)
+		novaService.PUT("/question/:Id", nova.HandleUpdateQuestion)
+		novaService.DELETE("/question/:Id", nova.HandleDeleteQuestion)
+		novaService.PATCH("/question/:Id", nova.HandleModifyQuestion)
+		novaService.GET("/question/:Id", nova.HandleQueryQuestion)
 	}
 	// enable tls settings
 	var tlsConfig *tls.Config
