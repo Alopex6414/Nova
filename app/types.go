@@ -44,6 +44,13 @@ type QuestionJudgement struct {
 	StandardAnswer bool   `json:"standard_answer" yaml:"standard_answer"`
 }
 
+type QuestionEssay struct {
+	Id             string `json:"id" yaml:"id"`
+	Title          string `json:"title" yaml:"title"`
+	Answer         string `json:"answer" yaml:"answer"`
+	StandardAnswer string `json:"standard_answer" yaml:"standard_answer"`
+}
+
 type QuestionTitle struct {
 	TitleText string `json:"title_text" yaml:"title_text"`
 }
