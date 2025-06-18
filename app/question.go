@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"nova/logger"
 	"reflect"
+	"strings"
 )
 
 func (nova *Nova) HandleCreateQuestionId(c *gin.Context) {
@@ -47,32 +48,65 @@ func (nova *Nova) HandleCreateQuestion(c *gin.Context) {
 	// binding structure according request type
 	switch reqType {
 	case "single_choice":
-		nova.HandleCreateQuestionSingleChoice(c)
+		nova.handleCreateQuestionSingleChoice(c, rawData)
 	case "multiple_choice":
-		nova.HandleCreateQuestionMultipleChoice(c)
+		nova.handleCreateQuestionMultipleChoice(c, rawData)
 	case "judgement":
-		nova.HandleCreateQuestionJudgement(c)
+		nova.handleCreateQuestionJudgement(c, rawData)
 	case "essay":
-		nova.HandleCreateQuestionEssay(c)
+		nova.handleCreateQuestionEssay(c, rawData)
 	default:
 		nova.response400BadRequest(c, errors.New("invalid request type"))
 	}
 	return
 }
 
-func (nova *Nova) HandleCreateQuestionSingleChoice(c *gin.Context) {
+func (nova *Nova) handleCreateQuestionSingleChoice(c *gin.Context, rawData []byte) {
+	// create question
+	var request QuestionSingleChoice
+	logger.Infof("handle request create question single-choice")
+	// request body should bind json
+	logger.Debugf("request body bind json format")
+	if err := json.Unmarshal(rawData, &request); err != nil {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
+		return
+	}
+	logger.Debugf("successfully bind request json format")
+	// check request body correctness
+	logger.Debugf("check question single-choice is validate")
+	b, err := nova.isQuestionSingleChoiceValidate(request)
+	if !b {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error check question single-choice is validate: %v", err)
+		return
+	}
+	logger.Debugf("successfully check question single-choice is validate")
+	// store created question in data cache
+	logger.Debugf("store question in data cache")
+	response := QuestionSingleChoice{
+		Id:             strings.ToLower(request.Id),
+		Title:          request.Title,
+		Answers:        request.Answers,
+		StandardAnswer: request.StandardAnswer,
+	}
+	// nova.createUserInDataCache(response)
+	logger.Debugf("successfully store question in data cache")
+	// return response
+	nova.response201Created(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusCreated, response)
 	return
 }
 
-func (nova *Nova) HandleCreateQuestionMultipleChoice(c *gin.Context) {
+func (nova *Nova) handleCreateQuestionMultipleChoice(c *gin.Context, rawData []byte) {
 	return
 }
 
-func (nova *Nova) HandleCreateQuestionJudgement(c *gin.Context) {
+func (nova *Nova) handleCreateQuestionJudgement(c *gin.Context, rawData []byte) {
 	return
 }
 
-func (nova *Nova) HandleCreateQuestionEssay(c *gin.Context) {
+func (nova *Nova) handleCreateQuestionEssay(c *gin.Context, rawData []byte) {
 	return
 }
 
@@ -92,23 +126,23 @@ func (nova *Nova) HandleUpdateQuestion(c *gin.Context) {
 
 }
 
-func (nova *Nova) reflectRequestType(raw []byte) (string, error) {
-	var data map[string]interface{}
-	// unmarshal raw data to data map interface
-	if err := json.Unmarshal(raw, &data); err != nil {
+func (nova *Nova) reflectRequestType(rawData []byte) (string, error) {
+	var temp map[string]interface{}
+	// unmarshal raw data to temp map interface
+	if err := json.Unmarshal(rawData, &temp); err != nil {
 		return "", err
 	}
 	// check mandatory segment existence
-	if nova.isRequiredFields(data, QuestionSingleChoice{}) {
+	if nova.isRequiredFields(temp, QuestionSingleChoice{}) {
 		return "single_choice", nil
 	}
-	if nova.isRequiredFields(data, QuestionMultipleChoice{}) {
+	if nova.isRequiredFields(temp, QuestionMultipleChoice{}) {
 		return "multiple_choice", nil
 	}
-	if nova.isRequiredFields(data, QuestionJudgement{}) {
+	if nova.isRequiredFields(temp, QuestionJudgement{}) {
 		return "judgement", nil
 	}
-	if nova.isRequiredFields(data, QuestionEssay{}) {
+	if nova.isRequiredFields(temp, QuestionEssay{}) {
 		return "essay", nil
 	}
 	return "", errors.New("invalid request")
@@ -158,4 +192,13 @@ func (nova *Nova) splitBindingRules(binding string) []string {
 		rules = append(rules, binding[start:])
 	}
 	return rules
+}
+
+func (nova *Nova) isQuestionSingleChoiceValidate(question QuestionSingleChoice) (bool, error) {
+	// check question Id format is UUID
+	err := uuid.Validate(question.Id)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
