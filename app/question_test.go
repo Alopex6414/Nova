@@ -92,6 +92,84 @@ func TestNova_HandleCreateQuestionId(t *testing.T) {
 	assert.NoError(t, uuid.Validate(response))
 }
 
+func BenchmarkNova_HandleCreateQuestionId(b *testing.B) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleCreateQuestionId
+	// Test Purpose: Benchmark HandleCreateQuestionId create questionId
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	// start benchmark test
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// request content
+		url := server.URL + "/nova/v1/question/Id"
+		// request create questionId
+		w := httptest.NewRecorder()
+		request, err := http.NewRequest(http.MethodPost, url, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(w, request)
+		// return response
+		var response string
+		err = json.Unmarshal(w.Body.Bytes(), &response)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusCreated, w.Code)
+		assert.Equal(b, "application/json", w.Header().Get("Content-Type"))
+		assert.NoError(b, uuid.Validate(response))
+	}
+}
+
+func BenchmarkNova_HandleCreateQuestionIdParallel(b *testing.B) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleCreateQuestionId (Parallel)
+	// Test Purpose: Benchmark HandleCreateQuestionId create questionId
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	// start benchmark test
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			// request content
+			url := server.URL + "/nova/v1/question/Id"
+			// request create questionId
+			w := httptest.NewRecorder()
+			request, err := http.NewRequest(http.MethodPost, url, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(w, request)
+			// return response
+			var response string
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusCreated, w.Code)
+			assert.Equal(b, "application/json", w.Header().Get("Content-Type"))
+			assert.NoError(b, uuid.Validate(response))
+		}
+	})
+}
+
 func TestNova_HandleCreateQuestion(t *testing.T) {
 	/*---------------------------------------------------------------------------------------
 	// Test Case: TestNova_HandleCreateQuestion
@@ -99,6 +177,8 @@ func TestNova_HandleCreateQuestion(t *testing.T) {
 	// Test Steps:
 	// 1. send CreateQuestionId request by using POST method
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	// 3. send CreateQuestion request by using POST method
+	// 4. receive CreateQuestion response with created question by using 201 Created Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
