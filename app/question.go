@@ -99,14 +99,113 @@ func (nova *Nova) handleCreateQuestionSingleChoice(c *gin.Context, rawData []byt
 }
 
 func (nova *Nova) handleCreateQuestionMultipleChoice(c *gin.Context, rawData []byte) {
+	// create question
+	var request QuestionMultipleChoice
+	logger.Infof("handle request create question multiple-choice")
+	// request body should bind json
+	logger.Debugf("request body bind json format")
+	if err := json.Unmarshal(rawData, &request); err != nil {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
+		return
+	}
+	logger.Debugf("successfully bind request json format")
+	// check request body correctness
+	logger.Debugf("check question multiple-choice is validate")
+	b, err := nova.isQuestionMultipleChoiceValidate(request)
+	if !b {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error check question multiple-choice is validate: %v", err)
+		return
+	}
+	logger.Debugf("successfully check question multiple-choice is validate")
+	// store created question in data cache
+	logger.Debugf("store question in data cache")
+	response := QuestionMultipleChoice{
+		Id:              strings.ToLower(request.Id),
+		Title:           request.Title,
+		Answers:         request.Answers,
+		StandardAnswers: request.StandardAnswers,
+	}
+	// nova.createUserInDataCache(response)
+	logger.Debugf("successfully store question in data cache")
+	// return response
+	nova.response201Created(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusCreated, response)
 	return
 }
 
 func (nova *Nova) handleCreateQuestionJudgement(c *gin.Context, rawData []byte) {
+	// create question
+	var request QuestionJudgement
+	logger.Infof("handle request create question judgement")
+	// request body should bind json
+	logger.Debugf("request body bind json format")
+	if err := json.Unmarshal(rawData, &request); err != nil {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
+		return
+	}
+	logger.Debugf("successfully bind request json format")
+	// check request body correctness
+	logger.Debugf("check question judgement is validate")
+	b, err := nova.isQuestionJudgementValidate(request)
+	if !b {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error check question judgement is validate: %v", err)
+		return
+	}
+	logger.Debugf("successfully check question judgement is validate")
+	// store created question in data cache
+	logger.Debugf("store question in data cache")
+	response := QuestionJudgement{
+		Id:             strings.ToLower(request.Id),
+		Title:          request.Title,
+		Answer:         request.Answer,
+		StandardAnswer: request.StandardAnswer,
+	}
+	// nova.createUserInDataCache(response)
+	logger.Debugf("successfully store question in data cache")
+	// return response
+	nova.response201Created(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusCreated, response)
 	return
 }
 
 func (nova *Nova) handleCreateQuestionEssay(c *gin.Context, rawData []byte) {
+	// create question
+	var request QuestionEssay
+	logger.Infof("handle request create question judgement")
+	// request body should bind json
+	logger.Debugf("request body bind json format")
+	if err := json.Unmarshal(rawData, &request); err != nil {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
+		return
+	}
+	logger.Debugf("successfully bind request json format")
+	// check request body correctness
+	logger.Debugf("check question essay is validate")
+	b, err := nova.isQuestionEssayValidate(request)
+	if !b {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error check question essay is validate: %v", err)
+		return
+	}
+	logger.Debugf("successfully check question essay is validate")
+	// store created question in data cache
+	logger.Debugf("store question in data cache")
+	response := QuestionEssay{
+		Id:             strings.ToLower(request.Id),
+		Title:          request.Title,
+		Answer:         request.Answer,
+		StandardAnswer: request.StandardAnswer,
+	}
+	// nova.createUserInDataCache(response)
+	logger.Debugf("successfully store question in data cache")
+	// return response
+	nova.response201Created(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusCreated, response)
 	return
 }
 
@@ -195,7 +294,34 @@ func (nova *Nova) splitBindingRules(binding string) []string {
 }
 
 func (nova *Nova) isQuestionSingleChoiceValidate(question QuestionSingleChoice) (bool, error) {
-	// check question Id format is UUID
+	// check question identity format is UUID
+	err := uuid.Validate(question.Id)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (nova *Nova) isQuestionMultipleChoiceValidate(question QuestionMultipleChoice) (bool, error) {
+	// check question identity format is UUID
+	err := uuid.Validate(question.Id)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (nova *Nova) isQuestionJudgementValidate(question QuestionJudgement) (bool, error) {
+	// check question identity format is UUID
+	err := uuid.Validate(question.Id)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (nova *Nova) isQuestionEssayValidate(question QuestionEssay) (bool, error) {
+	// check question identity format is UUID
 	err := uuid.Validate(question.Id)
 	if err != nil {
 		return false, err
