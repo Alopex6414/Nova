@@ -52,9 +52,12 @@ func (db *DB) CreateTables() error {
 		id TEXT PRIMARY KEY NOT NULL,
 		title TEXT NOT NULL,
 		answers TEXT NOT NULL,
-		standard_answer TEXT NOT NULL,
+		standard_answer TEXT NOT NULL
 	);`
 	err = db.createQuestionSingleChoiceTable(sql)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -288,4 +291,24 @@ func (db *DB) createQuestionSingleChoiceTable(sql string) error {
 		return fmt.Errorf("create question single-choice table failed: %w", err)
 	}
 	return nil
+}
+
+func (db *DB) CreateQuestionSingleChoice(question *QuestionSingleChoice) (int64, error) {
+	// execute user sql
+	query := `
+	INSERT INTO users (id, title, answers, standard_answer) 
+	VALUES (?, ?, ?, ?)
+	`
+	// perform insert user
+	result, err := db.sqliteDB.Exec(query, question.Id, question.Title, question.Answers, question.StandardAnswer)
+	if err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, fmt.Errorf("question already exists")
+			}
+		}
+		return 0, err
+	}
+	return result.LastInsertId()
 }
