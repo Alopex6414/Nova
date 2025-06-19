@@ -7,12 +7,21 @@ import (
 )
 
 type Cache struct {
-	userCache UserCache
+	userCache     UserCache
+	questionCache QuestionCache
 }
 
 type UserCache struct {
 	userSet []User
 	mutex   sync.RWMutex
+}
+
+type QuestionCache struct {
+	singleChoiceSet   []QuestionSingleChoice
+	multipleChoiceSet []QuestionMultipleChoice
+	judgementSet      []QuestionJudgement
+	essaySet          []QuestionEssay
+	mutex             sync.RWMutex
 }
 
 func NewCache() *Cache {

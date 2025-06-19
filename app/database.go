@@ -35,25 +35,33 @@ func (db *DB) CreateTables() error {
 	// create user table
 	sql := `
 		CREATE TABLE IF NOT EXISTS users (
-		userId TEXT PRIMARY KEY NOT NULL,
+		user_id TEXT PRIMARY KEY NOT NULL,
 		username TEXT NOT NULL,
 		password TEXT NOT NULL,
-		phoneNumber TEXT NOT NULL,
+		phone_number TEXT NOT NULL,
 		email TEXT,
 		address TEXT,
 		company TEXT
 	);`
-	err := db.createTable(sql)
+	err := db.createUserTable(sql)
 	if err != nil {
 		return err
 	}
+	// create question single-choice table
+	sql = `CREATE TABLE IF NOT EXISTS single_choice (
+		id TEXT PRIMARY KEY NOT NULL,
+		title TEXT NOT NULL,
+		answers TEXT NOT NULL,
+		standard_answer TEXT NOT NULL,
+	);`
+	err = db.createQuestionSingleChoiceTable(sql)
 	return nil
 }
 
-func (db *DB) createTable(sql string) error {
-	// create table
+func (db *DB) createUserTable(sql string) error {
+	// create user table
 	if _, err := db.sqliteDB.Exec(sql); err != nil {
-		return fmt.Errorf("create table failed: %w", err)
+		return fmt.Errorf("create user table failed: %w", err)
 	}
 	return nil
 }
@@ -61,7 +69,7 @@ func (db *DB) createTable(sql string) error {
 func (db *DB) CreateUser(user *User) (int64, error) {
 	// execute user sql
 	query := `
-	INSERT INTO users (userId, username, password, phoneNumber, email, address, company) 
+	INSERT INTO users (user_id, username, password, phone_number, email, address, company) 
 	VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 	// perform insert user
@@ -81,7 +89,7 @@ func (db *DB) CreateUser(user *User) (int64, error) {
 func (db *DB) CreateUserContext(ctx context.Context, user *User) (int64, error) {
 	// create user sql
 	query := `
-	INSERT INTO users (userId, username, password, phoneNumber, email, address, company) 
+	INSERT INTO users (user_id, username, password, phone_number, email, address, company) 
 	VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 	// execute create user
@@ -101,8 +109,8 @@ func (db *DB) CreateUserContext(ctx context.Context, user *User) (int64, error) 
 func (db *DB) QueryUser(userId string) (*User, error) {
 	// query user sql
 	query := `
-	SELECT userId, username, password, phoneNumber, email, address, company
-	FROM users WHERE userId = ?
+	SELECT user_id, username, password, phone_number, email, address, company
+	FROM users WHERE user_id = ?
 	`
 	// execute query user
 	row := db.sqliteDB.QueryRow(query, userId)
@@ -120,8 +128,8 @@ func (db *DB) QueryUser(userId string) (*User, error) {
 func (db *DB) QueryUserContext(ctx context.Context, userId string) (*User, error) {
 	// query user sql
 	query := `
-	SELECT userId, username, password, phoneNumber, email, address, company
-	FROM users WHERE userId = ?
+	SELECT user_id, username, password, phone_number, email, address, company
+	FROM users WHERE user_id = ?
 	`
 	// execute query user
 	row := db.sqliteDB.QueryRowContext(ctx, query, userId)
@@ -140,8 +148,8 @@ func (db *DB) UpdateUser(user *User) error {
 	// update user sql
 	query := `
 	UPDATE users 
-	SET username = ?, password = ?, phoneNumber = ?, email = ?, address = ?, company = ?
-	WHERE userId = ?
+	SET username = ?, password = ?, phone_number = ?, email = ?, address = ?, company = ?
+	WHERE user_id = ?
 	`
 	// execute update user
 	result, err := db.sqliteDB.Exec(query, user.Username, user.Password, user.PhoneNumber, user.Email, user.Address, user.Company, user.UserId)
@@ -163,8 +171,8 @@ func (db *DB) UpdateUserContext(ctx context.Context, user *User) error {
 	// update user sql
 	query := `
 	UPDATE users 
-	SET username = ?, password = ?, phoneNumber = ?, email = ?, address = ?, company = ?
-	WHERE userId = ?
+	SET username = ?, password = ?, phone_number = ?, email = ?, address = ?, company = ?
+	WHERE user_id = ?
 	`
 	// execute update user
 	result, err := db.sqliteDB.ExecContext(ctx, query, user.Username, user.Password, user.PhoneNumber, user.Email, user.Address, user.Company, user.UserId)
@@ -184,7 +192,7 @@ func (db *DB) UpdateUserContext(ctx context.Context, user *User) error {
 
 func (db *DB) DeleteUser(userId string) error {
 	// update user sql
-	query := `DELETE FROM users WHERE userId = ?`
+	query := `DELETE FROM users WHERE user_id = ?`
 	// execute delete user
 	result, err := db.sqliteDB.Exec(query, userId)
 	if err != nil {
@@ -203,7 +211,7 @@ func (db *DB) DeleteUser(userId string) error {
 
 func (db *DB) DeleteUserContext(ctx context.Context, userId string) error {
 	// update user sql
-	query := `DELETE FROM users WHERE userId = ?`
+	query := `DELETE FROM users WHERE user_id = ?`
 	// execute delete user
 	result, err := db.sqliteDB.ExecContext(ctx, query, userId)
 	if err != nil {
@@ -223,7 +231,7 @@ func (db *DB) DeleteUserContext(ctx context.Context, userId string) error {
 func (db *DB) QueryUsers() ([]*User, error) {
 	// query users
 	query := `
-	SELECT userId, username, password, phoneNumber, email, address, company
+	SELECT user_id, username, password, phone_number, email, address, company
 	FROM users
 	`
 	// execute query users
@@ -250,7 +258,7 @@ func (db *DB) QueryUsers() ([]*User, error) {
 func (db *DB) QueryUsersContext(ctx context.Context) ([]*User, error) {
 	// query users
 	query := `
-	SELECT userId, username, password, phoneNumber, email, address, company
+	SELECT user_id, username, password, phone_number, email, address, company
 	FROM users
 	`
 	// execute query users
@@ -272,4 +280,12 @@ func (db *DB) QueryUsersContext(ctx context.Context) ([]*User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (db *DB) createQuestionSingleChoiceTable(sql string) error {
+	// create question table
+	if _, err := db.sqliteDB.Exec(sql); err != nil {
+		return fmt.Errorf("create question single-choice table failed: %w", err)
+	}
+	return nil
 }
