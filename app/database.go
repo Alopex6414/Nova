@@ -296,7 +296,7 @@ func (db *DB) createQuestionSingleChoiceTable(sql string) error {
 func (db *DB) CreateQuestionSingleChoice(question *QuestionSingleChoice) (int64, error) {
 	// execute user sql
 	query := `
-	INSERT INTO users (id, title, answers, standard_answer) 
+	INSERT INTO single_choice (id, title, answers, standard_answer) 
 	VALUES (?, ?, ?, ?)
 	`
 	// perform insert user
@@ -311,4 +311,43 @@ func (db *DB) CreateQuestionSingleChoice(question *QuestionSingleChoice) (int64,
 		return 0, err
 	}
 	return result.LastInsertId()
+}
+
+func (db *DB) CreateQuestionSingleChoiceContext(ctx context.Context, question *QuestionSingleChoice) (int64, error) {
+	// execute user sql
+	query := `
+	INSERT INTO single_choice (id, title, answers, standard_answer) 
+	VALUES (?, ?, ?, ?)
+	`
+	// perform insert user
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Id, question.Title, question.Answers, question.StandardAnswer)
+	if err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, fmt.Errorf("question already exists")
+			}
+		}
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) QueryQuestionSingleChoice(id string) (*QuestionSingleChoice, error) {
+	// query user sql
+	query := `
+	SELECT id, title, answers, standard_answer
+	FROM single_choice WHERE id = ?
+	`
+	// execute query user
+	row := db.sqliteDB.QueryRow(query, id)
+	question := &QuestionSingleChoice{}
+	err := row.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return question, nil
 }
