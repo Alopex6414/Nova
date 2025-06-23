@@ -286,26 +286,26 @@ func (db *DB) QueryUsersContext(ctx context.Context) ([]*User, error) {
 }
 
 func (db *DB) createQuestionSingleChoiceTable(sql string) error {
-	// create question table
+	// create single-choice table
 	if _, err := db.sqliteDB.Exec(sql); err != nil {
-		return fmt.Errorf("create question single-choice table failed: %w", err)
+		return fmt.Errorf("create single-choice question table failed: %w", err)
 	}
 	return nil
 }
 
 func (db *DB) CreateQuestionSingleChoice(question *QuestionSingleChoice) (int64, error) {
-	// execute user sql
+	// execute single-choice sql
 	query := `
 	INSERT INTO single_choice (id, title, answers, standard_answer) 
 	VALUES (?, ?, ?, ?)
 	`
-	// perform insert user
+	// perform insert single-choice
 	result, err := db.sqliteDB.Exec(query, question.Id, question.Title, question.Answers, question.StandardAnswer)
 	if err != nil {
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) {
 			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
-				return 0, fmt.Errorf("question already exists")
+				return 0, fmt.Errorf("single-choice question already exists")
 			}
 		}
 		return 0, err
@@ -314,18 +314,18 @@ func (db *DB) CreateQuestionSingleChoice(question *QuestionSingleChoice) (int64,
 }
 
 func (db *DB) CreateQuestionSingleChoiceContext(ctx context.Context, question *QuestionSingleChoice) (int64, error) {
-	// execute user sql
+	// execute single-choice sql
 	query := `
 	INSERT INTO single_choice (id, title, answers, standard_answer) 
 	VALUES (?, ?, ?, ?)
 	`
-	// perform insert user
+	// perform insert single-choice
 	result, err := db.sqliteDB.ExecContext(ctx, query, question.Id, question.Title, question.Answers, question.StandardAnswer)
 	if err != nil {
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) {
 			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
-				return 0, fmt.Errorf("question already exists")
+				return 0, fmt.Errorf("single-choice question already exists")
 			}
 		}
 		return 0, err
@@ -334,20 +334,85 @@ func (db *DB) CreateQuestionSingleChoiceContext(ctx context.Context, question *Q
 }
 
 func (db *DB) QueryQuestionSingleChoice(id string) (*QuestionSingleChoice, error) {
-	// query user sql
+	// query single-choice sql
 	query := `
 	SELECT id, title, answers, standard_answer
 	FROM single_choice WHERE id = ?
 	`
-	// execute query user
+	// execute query single-choice
 	row := db.sqliteDB.QueryRow(query, id)
 	question := &QuestionSingleChoice{}
 	err := row.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user not found")
+			return nil, errors.New("single-choice question not found")
 		}
 		return nil, err
 	}
 	return question, nil
+}
+
+func (db *DB) QueryQuestionSingleChoiceContext(ctx context.Context, id string) (*QuestionSingleChoice, error) {
+	// query single-choice sql
+	query := `
+	SELECT id, title, answers, standard_answer
+	FROM single_choice WHERE id = ?
+	`
+	// execute query single-choice
+	row := db.sqliteDB.QueryRowContext(ctx, query, id)
+	question := &QuestionSingleChoice{}
+	err := row.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("single-choice question not found")
+		}
+		return nil, err
+	}
+	return question, nil
+}
+
+func (db *DB) UpdateQuestionSingleChoice(question *QuestionSingleChoice) error {
+	// update single-choice sql
+	query := `
+	UPDATE single_choice 
+	SET title = ?, answers = ?, standard_answer = ?
+	WHERE id = ?
+	`
+	// execute update single-choice
+	result, err := db.sqliteDB.Exec(query, question.Title, question.Answers, question.StandardAnswer, question.Id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("single-choice question not found")
+	}
+	return nil
+}
+
+func (db *DB) UpdateQuestionSingleChoiceContext(ctx context.Context, question *QuestionSingleChoice) error {
+	// update single-choice sql
+	query := `
+	UPDATE single_choice 
+	SET title = ?, answers = ?, standard_answer = ?
+	WHERE id = ?
+	`
+	// execute update single-choice
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Title, question.Answers, question.StandardAnswer, question.Id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("single-choice question not found")
+	}
+	return nil
 }
