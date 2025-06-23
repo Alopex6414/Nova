@@ -416,3 +416,41 @@ func (db *DB) UpdateQuestionSingleChoiceContext(ctx context.Context, question *Q
 	}
 	return nil
 }
+
+func (db *DB) DeleteQuestionSingleChoice(id string) error {
+	// update single-choice sql
+	query := `DELETE FROM single_choice WHERE id = ?`
+	// execute delete single-choice
+	result, err := db.sqliteDB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("single-choice question not found")
+	}
+	return nil
+}
+
+func (db *DB) DeleteQuestionSingleChoiceContext(ctx context.Context, id string) error {
+	// update single-choice sql
+	query := `DELETE FROM single_choice WHERE id = ?`
+	// execute delete single-choice
+	result, err := db.sqliteDB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("single-choice question not found")
+	}
+	return nil
+}
