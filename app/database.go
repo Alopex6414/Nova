@@ -454,3 +454,57 @@ func (db *DB) DeleteQuestionSingleChoiceContext(ctx context.Context, id string) 
 	}
 	return nil
 }
+
+func (db *DB) QueryQuestionsSingleChoice() ([]*QuestionSingleChoice, error) {
+	// query single-choice questions
+	query := `
+	SELECT id, title, answers, standard_answer
+	FROM single_choice
+	`
+	// execute query single-choice questions
+	rows, err := db.sqliteDB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch single-choice questions from database
+	var questions []*QuestionSingleChoice
+	for rows.Next() {
+		question := &QuestionSingleChoice{}
+		if err := rows.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return questions, nil
+}
+
+func (db *DB) QueryQuestionsSingleChoiceContext(ctx context.Context) ([]*QuestionSingleChoice, error) {
+	// query single-choice questions
+	query := `
+	SELECT id, title, answers, standard_answer
+	FROM single_choice
+	`
+	// execute query single-choice questions
+	rows, err := db.sqliteDB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch single-choice questions from database
+	var questions []*QuestionSingleChoice
+	for rows.Next() {
+		question := &QuestionSingleChoice{}
+		if err := rows.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return questions, nil
+}
