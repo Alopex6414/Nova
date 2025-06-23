@@ -97,6 +97,18 @@ func (nova *Nova) Init() {
 		nova.cache.userCache.userSet = append(nova.cache.userCache.userSet, *user)
 	}
 	logger.Info("Successfully query users from database.")
+	// query single-choice questions from database
+	logger.Info("Query single-choice questions from database...")
+	questions, err := nova.db.QueryQuestionsSingleChoice()
+	if err != nil {
+		logger.Fatalf("Failed to query single-choice questions from database: %s\n", err)
+		fmt.Printf("Failed to query single-choice questions from database: %s\n", err)
+		os.Exit(8)
+	}
+	for _, question := range questions {
+		nova.cache.questionCache.singleChoiceSet = append(nova.cache.questionCache.singleChoiceSet, *question)
+	}
+	logger.Info("Successfully query single-choice questions from database.")
 }
 
 func (nova *Nova) Start() {
