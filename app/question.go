@@ -64,7 +64,7 @@ func (nova *Nova) HandleCreateQuestion(c *gin.Context) {
 func (nova *Nova) handleCreateQuestionSingleChoice(c *gin.Context, rawData []byte) {
 	// create question
 	var request QuestionSingleChoice
-	logger.Infof("handle request create question single-choice")
+	logger.Infof("handle request create single-choice question")
 	// request body should bind json
 	logger.Debugf("request body bind json format")
 	if err := json.Unmarshal(rawData, &request); err != nil {
@@ -74,24 +74,49 @@ func (nova *Nova) handleCreateQuestionSingleChoice(c *gin.Context, rawData []byt
 	}
 	logger.Debugf("successfully bind request json format")
 	// check request body correctness
-	logger.Debugf("check question single-choice is validate")
+	logger.Debugf("check single-choice question is validate")
 	b, err := nova.isQuestionSingleChoiceValidate(request)
 	if !b {
 		nova.response400BadRequest(c, err)
-		logger.Errorf("error check question single-choice is validate: %v", err)
+		logger.Errorf("error check single-choice question is validate: %v", err)
 		return
 	}
-	logger.Debugf("successfully check question single-choice is validate")
-	// store created question in data cache
-	logger.Debugf("store question in data cache")
+	logger.Debugf("successfully check single-choice question is validate")
+	// update data cache by querying single-choice questions in database
+	logger.Debugf("update data cache by querying single-choice question in database")
+	err = nova.querySingleChoiceQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying single-choice question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying single-choice question in database")
+	// check user existence
+	logger.Debugf("check single-choice question is existed")
+	if nova.isSingleChoiceQuestionExisted(strings.ToLower(request.Id)) {
+		nova.response409Conflict(c, errors.New("single-choice question already exists"))
+		logger.Errorf("error check single-choice question is existed: %v", err)
+		return
+	}
+	logger.Debugf("successfully check single-choice question is existed")
+	// store created single-choice question in data cache
+	logger.Debugf("store single-choice question in data cache")
 	response := QuestionSingleChoice{
 		Id:             strings.ToLower(request.Id),
 		Title:          request.Title,
 		Answers:        request.Answers,
 		StandardAnswer: request.StandardAnswer,
 	}
-	// nova.createUserInDataCache(response)
-	logger.Debugf("successfully store question in data cache")
+	nova.createSingleChoiceQuestionInDataCache(response)
+	logger.Debugf("successfully store single-choice question in data cache")
+	// store created single-choice question in database
+	logger.Debugf("store single-choice question in database")
+	if err = nova.createSingleChoiceQuestionInDatabase(response.Id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error single-choice question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully store single-choice question in database")
 	// return response
 	nova.response201Created(c, response)
 	logger.Infof("response status code: %v, body: %v", http.StatusCreated, response)
@@ -293,6 +318,19 @@ func (nova *Nova) splitBindingRules(binding string) []string {
 	return rules
 }
 
+func (nova *Nova) isSingleChoiceQuestionExisted(id string) bool {
+	// enable question cache read lock
+	nova.cache.questionCache.mutex.RLock()
+	defer nova.cache.questionCache.mutex.RUnlock()
+	// search userId in data cache
+	for _, v := range nova.cache.questionCache.singleChoiceSet {
+		if v.Id == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (nova *Nova) isQuestionSingleChoiceValidate(question QuestionSingleChoice) (bool, error) {
 	// check question identity format is UUID
 	err := uuid.Validate(question.Id)
@@ -327,4 +365,65 @@ func (nova *Nova) isQuestionEssayValidate(question QuestionEssay) (bool, error) 
 		return false, err
 	}
 	return true, nil
+}
+
+func (nova *Nova) querySingleChoiceQuestionsInDatabase() error {
+	// enable question cache write lock
+	nova.cache.questionCache.mutex.Lock()
+	defer nova.cache.questionCache.mutex.Unlock()
+	// query single choice question from database
+	questions, err := nova.db.QueryQuestionsSingleChoice()
+	if err != nil {
+		return err
+	}
+	// update single choice question in data cache
+	for _, question := range questions {
+		b := false
+		// update if question existed
+		for k, v := range nova.cache.questionCache.singleChoiceSet {
+			if v.Id == question.Id {
+				nova.cache.questionCache.singleChoiceSet[k] = *question
+				b = true
+				break
+			}
+		}
+		// create single choice question if question not existed
+		if !b {
+			nova.cache.questionCache.singleChoiceSet = append(nova.cache.questionCache.singleChoiceSet, *question)
+		}
+	}
+	return nil
+}
+
+func (nova *Nova) createSingleChoiceQuestionInDataCache(question QuestionSingleChoice) {
+	// enable single choice question cache write lock
+	nova.cache.questionCache.mutex.Lock()
+	defer nova.cache.questionCache.mutex.Unlock()
+	// append user in data cache
+	nova.cache.questionCache.singleChoiceSet = append(nova.cache.questionCache.singleChoiceSet, question)
+	return
+}
+
+func (nova *Nova) createSingleChoiceQuestionInDatabase(id string) error {
+	// enable single-choice question cache read lock
+	nova.cache.questionCache.mutex.RLock()
+	defer nova.cache.questionCache.mutex.RUnlock()
+	// search Id in data cache
+	b := false
+	question := QuestionSingleChoice{}
+	for _, v := range nova.cache.questionCache.singleChoiceSet {
+		if v.Id == id {
+			question = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("single-choice question not found")
+	}
+	// create single-choice question in database
+	if _, err := nova.db.CreateQuestionSingleChoice(&question); err != nil {
+		return err
+	}
+	return nil
 }

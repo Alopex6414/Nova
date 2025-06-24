@@ -731,7 +731,7 @@ func (nova *Nova) queryUsersInDatabase() error {
 		}
 		// create user if user not existed
 		if !b {
-			nova.cache.userCache.userSet = append(nova.cache.userCache.userSet)
+			nova.cache.userCache.userSet = append(nova.cache.userCache.userSet, *user)
 		}
 	}
 	return nil
