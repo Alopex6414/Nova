@@ -319,11 +319,11 @@ func (nova *Nova) splitBindingRules(binding string) []string {
 }
 
 func (nova *Nova) isSingleChoiceQuestionExisted(id string) bool {
-	// enable question cache read lock
-	nova.cache.questionCache.mutex.RLock()
-	defer nova.cache.questionCache.mutex.RUnlock()
-	// search userId in data cache
-	for _, v := range nova.cache.questionCache.singleChoiceSet {
+	// enable single-choice question cache read lock
+	nova.cache.questionsCache.singleChoiceCache.mutex.RLock()
+	defer nova.cache.questionsCache.singleChoiceCache.mutex.RUnlock()
+	// search Id in data cache
+	for _, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
 		if v.Id == id {
 			return true
 		}
@@ -367,51 +367,51 @@ func (nova *Nova) isQuestionEssayValidate(question QuestionEssay) (bool, error) 
 	return true, nil
 }
 
+func (nova *Nova) createSingleChoiceQuestionInDataCache(question QuestionSingleChoice) {
+	// enable single-choice question cache write lock
+	nova.cache.questionsCache.singleChoiceCache.mutex.Lock()
+	defer nova.cache.questionsCache.singleChoiceCache.mutex.Unlock()
+	// append single-choice question in data cache
+	nova.cache.questionsCache.singleChoiceCache.singleChoiceSet = append(nova.cache.questionsCache.singleChoiceCache.singleChoiceSet, question)
+	return
+}
+
 func (nova *Nova) querySingleChoiceQuestionsInDatabase() error {
-	// enable question cache write lock
-	nova.cache.questionCache.mutex.Lock()
-	defer nova.cache.questionCache.mutex.Unlock()
-	// query single choice question from database
+	// enable single-choice question cache write lock
+	nova.cache.questionsCache.singleChoiceCache.mutex.Lock()
+	defer nova.cache.questionsCache.singleChoiceCache.mutex.Unlock()
+	// query single-choice question from database
 	questions, err := nova.db.QueryQuestionsSingleChoice()
 	if err != nil {
 		return err
 	}
-	// update single choice question in data cache
+	// update single-choice question in data cache
 	for _, question := range questions {
 		b := false
-		// update if question existed
-		for k, v := range nova.cache.questionCache.singleChoiceSet {
+		// update if single-choice question existed
+		for k, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
 			if v.Id == question.Id {
-				nova.cache.questionCache.singleChoiceSet[k] = *question
+				nova.cache.questionsCache.singleChoiceCache.singleChoiceSet[k] = *question
 				b = true
 				break
 			}
 		}
-		// create single choice question if question not existed
+		// create single-choice question if question not existed
 		if !b {
-			nova.cache.questionCache.singleChoiceSet = append(nova.cache.questionCache.singleChoiceSet, *question)
+			nova.cache.questionsCache.singleChoiceCache.singleChoiceSet = append(nova.cache.questionsCache.singleChoiceCache.singleChoiceSet, *question)
 		}
 	}
 	return nil
 }
 
-func (nova *Nova) createSingleChoiceQuestionInDataCache(question QuestionSingleChoice) {
-	// enable single choice question cache write lock
-	nova.cache.questionCache.mutex.Lock()
-	defer nova.cache.questionCache.mutex.Unlock()
-	// append user in data cache
-	nova.cache.questionCache.singleChoiceSet = append(nova.cache.questionCache.singleChoiceSet, question)
-	return
-}
-
 func (nova *Nova) createSingleChoiceQuestionInDatabase(id string) error {
 	// enable single-choice question cache read lock
-	nova.cache.questionCache.mutex.RLock()
-	defer nova.cache.questionCache.mutex.RUnlock()
+	nova.cache.questionsCache.singleChoiceCache.mutex.RLock()
+	defer nova.cache.questionsCache.singleChoiceCache.mutex.RUnlock()
 	// search Id in data cache
 	b := false
 	question := QuestionSingleChoice{}
-	for _, v := range nova.cache.questionCache.singleChoiceSet {
+	for _, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
 		if v.Id == id {
 			question = v
 			b = true

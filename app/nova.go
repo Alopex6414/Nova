@@ -106,7 +106,7 @@ func (nova *Nova) Init() {
 		os.Exit(8)
 	}
 	for _, question := range questions {
-		nova.cache.questionCache.singleChoiceSet = append(nova.cache.questionCache.singleChoiceSet, *question)
+		nova.cache.questionsCache.singleChoiceCache.singleChoiceSet = append(nova.cache.questionsCache.singleChoiceCache.singleChoiceSet, *question)
 	}
 	logger.Info("Successfully query single-choice questions from database.")
 }
