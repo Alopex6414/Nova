@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"modernc.org/sqlite"
@@ -299,8 +300,17 @@ func (db *DB) CreateQuestionSingleChoice(question *QuestionSingleChoice) (int64,
 	INSERT INTO single_choice (id, title, answers, standard_answer) 
 	VALUES (?, ?, ?, ?)
 	`
+	// marshal json slices & structure
+	answers, err := json.Marshal(question.Answers)
+	if err != nil {
+		return 0, err
+	}
+	standardAnswer, err := json.Marshal(question.StandardAnswer)
+	if err != nil {
+		return 0, err
+	}
 	// perform insert single-choice
-	result, err := db.sqliteDB.Exec(query, question.Id, question.Title, question.Answers, question.StandardAnswer)
+	result, err := db.sqliteDB.Exec(query, question.Id, question.Title, answers, standardAnswer)
 	if err != nil {
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) {
@@ -319,8 +329,17 @@ func (db *DB) CreateQuestionSingleChoiceContext(ctx context.Context, question *Q
 	INSERT INTO single_choice (id, title, answers, standard_answer) 
 	VALUES (?, ?, ?, ?)
 	`
+	// marshal json slices & structure
+	answers, err := json.Marshal(question.Answers)
+	if err != nil {
+		return 0, err
+	}
+	standardAnswer, err := json.Marshal(question.StandardAnswer)
+	if err != nil {
+		return 0, err
+	}
 	// perform insert single-choice
-	result, err := db.sqliteDB.ExecContext(ctx, query, question.Id, question.Title, question.Answers, question.StandardAnswer)
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Id, question.Title, answers, standardAnswer)
 	if err != nil {
 		var sqliteErr *sqlite.Error
 		if errors.As(err, &sqliteErr) {
@@ -339,14 +358,24 @@ func (db *DB) QueryQuestionSingleChoice(id string) (*QuestionSingleChoice, error
 	SELECT id, title, answers, standard_answer
 	FROM single_choice WHERE id = ?
 	`
+	// variables definition
+	var answers []byte
+	var standardAnswer []byte
 	// execute query single-choice
 	row := db.sqliteDB.QueryRow(query, id)
 	question := &QuestionSingleChoice{}
-	err := row.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer)
+	err := row.Scan(&question.Id, &question.Title, &answers, &standardAnswer)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("single-choice question not found")
 		}
+		return nil, err
+	}
+	// unmarshal json slices & structure
+	if err := json.Unmarshal(answers, &question.Answers); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(standardAnswer, &question.StandardAnswer); err != nil {
 		return nil, err
 	}
 	return question, nil
@@ -358,14 +387,24 @@ func (db *DB) QueryQuestionSingleChoiceContext(ctx context.Context, id string) (
 	SELECT id, title, answers, standard_answer
 	FROM single_choice WHERE id = ?
 	`
+	// variables definition
+	var answers []byte
+	var standardAnswer []byte
 	// execute query single-choice
 	row := db.sqliteDB.QueryRowContext(ctx, query, id)
 	question := &QuestionSingleChoice{}
-	err := row.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer)
+	err := row.Scan(&question.Id, &question.Title, &answers, &standardAnswer)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("single-choice question not found")
 		}
+		return nil, err
+	}
+	// unmarshal json slices & structure
+	if err := json.Unmarshal(answers, &question.Answers); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(standardAnswer, &question.StandardAnswer); err != nil {
 		return nil, err
 	}
 	return question, nil
@@ -378,8 +417,17 @@ func (db *DB) UpdateQuestionSingleChoice(question *QuestionSingleChoice) error {
 	SET title = ?, answers = ?, standard_answer = ?
 	WHERE id = ?
 	`
+	// marshal json slices & structure
+	answers, err := json.Marshal(question.Answers)
+	if err != nil {
+		return err
+	}
+	standardAnswer, err := json.Marshal(question.StandardAnswer)
+	if err != nil {
+		return err
+	}
 	// execute update single-choice
-	result, err := db.sqliteDB.Exec(query, question.Title, question.Answers, question.StandardAnswer, question.Id)
+	result, err := db.sqliteDB.Exec(query, question.Title, answers, standardAnswer, question.Id)
 	if err != nil {
 		return err
 	}
@@ -401,8 +449,17 @@ func (db *DB) UpdateQuestionSingleChoiceContext(ctx context.Context, question *Q
 	SET title = ?, answers = ?, standard_answer = ?
 	WHERE id = ?
 	`
+	// marshal json slices & structure
+	answers, err := json.Marshal(question.Answers)
+	if err != nil {
+		return err
+	}
+	standardAnswer, err := json.Marshal(question.StandardAnswer)
+	if err != nil {
+		return err
+	}
 	// execute update single-choice
-	result, err := db.sqliteDB.ExecContext(ctx, query, question.Title, question.Answers, question.StandardAnswer, question.Id)
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Title, answers, standardAnswer, question.Id)
 	if err != nil {
 		return err
 	}
@@ -470,8 +527,19 @@ func (db *DB) QueryQuestionsSingleChoice() ([]*QuestionSingleChoice, error) {
 	// fetch single-choice questions from database
 	var questions []*QuestionSingleChoice
 	for rows.Next() {
+		// variables definition
+		var answers []byte
+		var standardAnswer []byte
+		// query single-choice question
 		question := &QuestionSingleChoice{}
-		if err := rows.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer); err != nil {
+		if err := rows.Scan(&question.Id, &question.Title, &answers, &standardAnswer); err != nil {
+			return nil, err
+		}
+		// unmarshal json slices & structure
+		if err := json.Unmarshal(answers, &question.Answers); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(standardAnswer, &question.StandardAnswer); err != nil {
 			return nil, err
 		}
 		questions = append(questions, question)
@@ -497,8 +565,19 @@ func (db *DB) QueryQuestionsSingleChoiceContext(ctx context.Context) ([]*Questio
 	// fetch single-choice questions from database
 	var questions []*QuestionSingleChoice
 	for rows.Next() {
+		// variables definition
+		var answers []byte
+		var standardAnswer []byte
+		// query single-choice question
 		question := &QuestionSingleChoice{}
-		if err := rows.Scan(&question.Id, &question.Title, &question.Answers, &question.StandardAnswer); err != nil {
+		if err := rows.Scan(&question.Id, &question.Title, &answers, &standardAnswer); err != nil {
+			return nil, err
+		}
+		// unmarshal json slices & structure
+		if err := json.Unmarshal(answers, &question.Answers); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(standardAnswer, &question.StandardAnswer); err != nil {
 			return nil, err
 		}
 		questions = append(questions, question)
