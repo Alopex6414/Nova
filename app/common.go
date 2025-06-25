@@ -25,7 +25,7 @@ func (nova *Nova) response204NoContent(c *gin.Context, body any) {
 func (nova *Nova) response400BadRequest(c *gin.Context, err error) {
 	var problemDetails ProblemDetails
 	problemDetails.Title = "Bad Request"
-	problemDetails.Type = "User"
+	problemDetails.Type = "Client Error"
 	problemDetails.Status = http.StatusBadRequest
 	problemDetails.Cause = err.Error()
 	c.Header("Content-Type", "application/problem+json")
@@ -36,7 +36,7 @@ func (nova *Nova) response400BadRequest(c *gin.Context, err error) {
 func (nova *Nova) response403Forbidden(c *gin.Context, err error) {
 	var problemDetails ProblemDetails
 	problemDetails.Title = "Forbidden"
-	problemDetails.Type = "User"
+	problemDetails.Type = "Client Error"
 	problemDetails.Status = http.StatusForbidden
 	problemDetails.Cause = err.Error()
 	c.Header("Content-Type", "application/problem+json")
@@ -47,7 +47,7 @@ func (nova *Nova) response403Forbidden(c *gin.Context, err error) {
 func (nova *Nova) response404NotFound(c *gin.Context, err error) {
 	var problemDetails ProblemDetails
 	problemDetails.Title = "Not Found"
-	problemDetails.Type = "User"
+	problemDetails.Type = "Client Error"
 	problemDetails.Status = http.StatusNotFound
 	problemDetails.Cause = err.Error()
 	c.Header("Content-Type", "application/problem+json")
@@ -58,7 +58,7 @@ func (nova *Nova) response404NotFound(c *gin.Context, err error) {
 func (nova *Nova) response409Conflict(c *gin.Context, err error) {
 	var problemDetails ProblemDetails
 	problemDetails.Title = "Conflict"
-	problemDetails.Type = "User"
+	problemDetails.Type = "Client Error"
 	problemDetails.Status = http.StatusConflict
 	problemDetails.Cause = err.Error()
 	c.Header("Content-Type", "application/problem+json")
@@ -69,7 +69,7 @@ func (nova *Nova) response409Conflict(c *gin.Context, err error) {
 func (nova *Nova) response412PreconditionFailed(c *gin.Context, err error) {
 	var problemDetails ProblemDetails
 	problemDetails.Title = "PreconditionFailed"
-	problemDetails.Type = "User"
+	problemDetails.Type = "Client Error"
 	problemDetails.Status = http.StatusPreconditionFailed
 	problemDetails.Cause = err.Error()
 	c.Header("Content-Type", "application/problem+json")
@@ -80,7 +80,7 @@ func (nova *Nova) response412PreconditionFailed(c *gin.Context, err error) {
 func (nova *Nova) response417ExpectationFailed(c *gin.Context, err error) {
 	var problemDetails ProblemDetails
 	problemDetails.Title = "ExpectationFailed"
-	problemDetails.Type = "User"
+	problemDetails.Type = "Client Error"
 	problemDetails.Status = http.StatusExpectationFailed
 	problemDetails.Cause = err.Error()
 	c.Header("Content-Type", "application/problem+json")
@@ -91,7 +91,7 @@ func (nova *Nova) response417ExpectationFailed(c *gin.Context, err error) {
 func (nova *Nova) response500InternalServerError(c *gin.Context, err error) {
 	var problemDetails ProblemDetails
 	problemDetails.Title = "Internal Server Error"
-	problemDetails.Type = "User"
+	problemDetails.Type = "Server Error"
 	problemDetails.Status = http.StatusInternalServerError
 	problemDetails.Cause = err.Error()
 	c.Header("Content-Type", "application/problem+json")
