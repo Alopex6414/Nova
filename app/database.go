@@ -48,7 +48,7 @@ func (db *DB) CreateTables() error {
 	if err != nil {
 		return err
 	}
-	// create question single-choice table
+	// create single-choice question table
 	sql = `CREATE TABLE IF NOT EXISTS single_choice (
 		id TEXT PRIMARY KEY NOT NULL,
 		title TEXT NOT NULL,
@@ -56,6 +56,17 @@ func (db *DB) CreateTables() error {
 		standard_answer TEXT NOT NULL
 	);`
 	err = db.createQuestionSingleChoiceTable(sql)
+	if err != nil {
+		return err
+	}
+	// create multiple-choice question table
+	sql = `CREATE TABLE IF NOT EXISTS multiple_choice (
+		id TEXT PRIMARY KEY NOT NULL,
+		title TEXT NOT NULL,
+		answers TEXT NOT NULL,
+		standard_answers TEXT NOT NULL
+	);`
+	err = db.createQuestionMultipleChoiceTable(sql)
 	if err != nil {
 		return err
 	}
@@ -578,6 +589,308 @@ func (db *DB) QueryQuestionsSingleChoiceContext(ctx context.Context) ([]*Questio
 			return nil, err
 		}
 		if err := json.Unmarshal(standardAnswer, &question.StandardAnswer); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return questions, nil
+}
+
+func (db *DB) createQuestionMultipleChoiceTable(sql string) error {
+	// create multiple-choice table
+	if _, err := db.sqliteDB.Exec(sql); err != nil {
+		return fmt.Errorf("create multiple-choice question table failed: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) CreateQuestionMultipleChoice(question *QuestionMultipleChoice) (int64, error) {
+	// execute multiple-choice sql
+	query := `
+	INSERT INTO multiple_choice (id, title, answers, standard_answers) 
+	VALUES (?, ?, ?, ?)
+	`
+	// marshal json slices & structure
+	answers, err := json.Marshal(question.Answers)
+	if err != nil {
+		return 0, err
+	}
+	standardAnswers, err := json.Marshal(question.StandardAnswers)
+	if err != nil {
+		return 0, err
+	}
+	// perform insert multiple-choice
+	result, err := db.sqliteDB.Exec(query, question.Id, question.Title, answers, standardAnswers)
+	if err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, fmt.Errorf("multiple-choice question already exists")
+			}
+		}
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) CreateQuestionMultipleChoiceContext(ctx context.Context, question *QuestionMultipleChoice) (int64, error) {
+	// execute multiple-choice sql
+	query := `
+	INSERT INTO multiple_choice (id, title, answers, standard_answers) 
+	VALUES (?, ?, ?, ?)
+	`
+	// marshal json slices & structure
+	answers, err := json.Marshal(question.Answers)
+	if err != nil {
+		return 0, err
+	}
+	standardAnswers, err := json.Marshal(question.StandardAnswers)
+	if err != nil {
+		return 0, err
+	}
+	// perform insert multiple-choice
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Id, question.Title, answers, standardAnswers)
+	if err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, fmt.Errorf("multiple-choice question already exists")
+			}
+		}
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) QueryQuestionMultipleChoice(id string) (*QuestionMultipleChoice, error) {
+	// query multiple-choice sql
+	query := `
+	SELECT id, title, answers, standard_answers
+	FROM multiple_choice WHERE id = ?
+	`
+	// variables definition
+	var answers []byte
+	var standardAnswers []byte
+	// execute query multiple-choice
+	row := db.sqliteDB.QueryRow(query, id)
+	question := &QuestionMultipleChoice{}
+	err := row.Scan(&question.Id, &question.Title, &answers, &standardAnswers)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("multiple-choice question not found")
+		}
+		return nil, err
+	}
+	// unmarshal json slices & structure
+	if err := json.Unmarshal(answers, &question.Answers); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(standardAnswers, &question.StandardAnswers); err != nil {
+		return nil, err
+	}
+	return question, nil
+}
+
+func (db *DB) QueryQuestionMultipleChoiceContext(ctx context.Context, id string) (*QuestionMultipleChoice, error) {
+	// query multiple-choice sql
+	query := `
+	SELECT id, title, answers, standard_answers
+	FROM multiple_choice WHERE id = ?
+	`
+	// variables definition
+	var answers []byte
+	var standardAnswers []byte
+	// execute query multiple-choice
+	row := db.sqliteDB.QueryRowContext(ctx, query, id)
+	question := &QuestionMultipleChoice{}
+	err := row.Scan(&question.Id, &question.Title, &answers, &standardAnswers)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("multiple-choice question not found")
+		}
+		return nil, err
+	}
+	// unmarshal json slices & structure
+	if err := json.Unmarshal(answers, &question.Answers); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(standardAnswers, &question.StandardAnswers); err != nil {
+		return nil, err
+	}
+	return question, nil
+}
+
+func (db *DB) UpdateQuestionMultipleChoice(question *QuestionMultipleChoice) error {
+	// update multiple-choice sql
+	query := `
+	UPDATE multiple_choice 
+	SET title = ?, answers = ?, standard_answers = ?
+	WHERE id = ?
+	`
+	// marshal json slices & structure
+	answers, err := json.Marshal(question.Answers)
+	if err != nil {
+		return err
+	}
+	standardAnswers, err := json.Marshal(question.StandardAnswers)
+	if err != nil {
+		return err
+	}
+	// execute update multiple-choice
+	result, err := db.sqliteDB.Exec(query, question.Title, answers, standardAnswers, question.Id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("multiple-choice question not found")
+	}
+	return nil
+}
+
+func (db *DB) UpdateQuestionMultipleChoiceContext(ctx context.Context, question *QuestionMultipleChoice) error {
+	// update multiple-choice sql
+	query := `
+	UPDATE multiple_choice 
+	SET title = ?, answers = ?, standard_answers = ?
+	WHERE id = ?
+	`
+	// marshal json slices & structure
+	answers, err := json.Marshal(question.Answers)
+	if err != nil {
+		return err
+	}
+	standardAnswers, err := json.Marshal(question.StandardAnswers)
+	if err != nil {
+		return err
+	}
+	// execute update multiple-choice
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Title, answers, standardAnswers, question.Id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("multiple-choice question not found")
+	}
+	return nil
+}
+
+func (db *DB) DeleteQuestionMultipleChoice(id string) error {
+	// update multiple-choice sql
+	query := `DELETE FROM multiple_choice WHERE id = ?`
+	// execute delete multiple-choice
+	result, err := db.sqliteDB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("multiple-choice question not found")
+	}
+	return nil
+}
+
+func (db *DB) DeleteQuestionMultipleChoiceContext(ctx context.Context, id string) error {
+	// update multiple-choice sql
+	query := `DELETE FROM multiple_choice WHERE id = ?`
+	// execute delete multiple-choice
+	result, err := db.sqliteDB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("multiple-choice question not found")
+	}
+	return nil
+}
+
+func (db *DB) QueryQuestionsMultipleChoice() ([]*QuestionMultipleChoice, error) {
+	// query multiple-choice questions
+	query := `
+	SELECT id, title, answers, standard_answers
+	FROM multiple_choice
+	`
+	// execute query multiple-choice questions
+	rows, err := db.sqliteDB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch multiple-choice questions from database
+	var questions []*QuestionMultipleChoice
+	for rows.Next() {
+		// variables definition
+		var answers []byte
+		var standardAnswers []byte
+		// query multiple-choice question
+		question := &QuestionMultipleChoice{}
+		if err := rows.Scan(&question.Id, &question.Title, &answers, &standardAnswers); err != nil {
+			return nil, err
+		}
+		// unmarshal json slices & structure
+		if err := json.Unmarshal(answers, &question.Answers); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(standardAnswers, &question.StandardAnswers); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return questions, nil
+}
+
+func (db *DB) QueryQuestionsMultipleChoiceContext(ctx context.Context) ([]*QuestionMultipleChoice, error) {
+	// query multiple-choice questions
+	query := `
+	SELECT id, title, answers, standard_answers
+	FROM multiple_choice
+	`
+	// execute query multiple-choice questions
+	rows, err := db.sqliteDB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch multiple-choice questions from database
+	var questions []*QuestionMultipleChoice
+	for rows.Next() {
+		// variables definition
+		var answers []byte
+		var standardAnswers []byte
+		// query multiple-choice question
+		question := &QuestionMultipleChoice{}
+		if err := rows.Scan(&question.Id, &question.Title, &answers, &standardAnswers); err != nil {
+			return nil, err
+		}
+		// unmarshal json slices & structure
+		if err := json.Unmarshal(answers, &question.Answers); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(standardAnswers, &question.StandardAnswers); err != nil {
 			return nil, err
 		}
 		questions = append(questions, question)
