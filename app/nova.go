@@ -121,6 +121,18 @@ func (nova *Nova) Init() {
 		nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet = append(nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet, *question)
 	}
 	logger.Info("Successfully query multiple-choice questions from database.")
+	// query judgement questions from database
+	logger.Info("Query judgement questions from database...")
+	judgementQuestions, err := nova.db.QueryQuestionsJudgement()
+	if err != nil {
+		logger.Fatalf("Failed to query judgement questions from database: %s\n", err)
+		fmt.Printf("Failed to query judgement questions from database: %s\n", err)
+		os.Exit(9)
+	}
+	for _, question := range judgementQuestions {
+		nova.cache.questionsCache.judgementCache.judgementSet = append(nova.cache.questionsCache.judgementCache.judgementSet, *question)
+	}
+	logger.Info("Successfully query judgement questions from database.")
 }
 
 func (nova *Nova) Start() {

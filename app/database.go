@@ -70,6 +70,17 @@ func (db *DB) CreateTables() error {
 	if err != nil {
 		return err
 	}
+	// create judgement question table
+	sql = `CREATE TABLE IF NOT EXISTS judgement (
+		id TEXT PRIMARY KEY NOT NULL,
+		title TEXT NOT NULL,
+		answer Boolean NOT NULL,
+		standard_answer Boolean NOT NULL
+	);`
+	err = db.createQuestionJudgementTable(sql)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -891,6 +902,232 @@ func (db *DB) QueryQuestionsMultipleChoiceContext(ctx context.Context) ([]*Quest
 			return nil, err
 		}
 		if err := json.Unmarshal(standardAnswers, &question.StandardAnswers); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return questions, nil
+}
+
+func (db *DB) createQuestionJudgementTable(sql string) error {
+	// create judgement table
+	if _, err := db.sqliteDB.Exec(sql); err != nil {
+		return fmt.Errorf("create judgement question table failed: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) CreateQuestionJudgement(question *QuestionJudgement) (int64, error) {
+	// execute judgement sql
+	query := `
+	INSERT INTO judgement (id, title, answer, standard_answer) 
+	VALUES (?, ?, ?, ?)
+	`
+	// perform insert multiple-choice
+	result, err := db.sqliteDB.Exec(query, question.Id, question.Title, question.Answer, question.StandardAnswer)
+	if err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, fmt.Errorf("judgement question already exists")
+			}
+		}
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) CreateQuestionJudgementContext(ctx context.Context, question *QuestionJudgement) (int64, error) {
+	// execute judgement sql
+	query := `
+	INSERT INTO judgement (id, title, answer, standard_answer) 
+	VALUES (?, ?, ?, ?)
+	`
+	// perform insert multiple-choice
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Id, question.Title, question.Answer, question.StandardAnswer)
+	if err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, fmt.Errorf("judgement question already exists")
+			}
+		}
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) QueryQuestionJudgement(id string) (*QuestionJudgement, error) {
+	// query judgement sql
+	query := `
+	SELECT id, title, answer, standard_answer
+	FROM judgement WHERE id = ?
+	`
+	// execute query judgement
+	row := db.sqliteDB.QueryRow(query, id)
+	question := &QuestionJudgement{}
+	err := row.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("judgement question not found")
+		}
+		return nil, err
+	}
+	return question, nil
+}
+
+func (db *DB) QueryQuestionJudgementContext(ctx context.Context, id string) (*QuestionJudgement, error) {
+	// query judgement sql
+	query := `
+	SELECT id, title, answer, standard_answer
+	FROM judgement WHERE id = ?
+	`
+	// execute query judgement
+	row := db.sqliteDB.QueryRowContext(ctx, query, id)
+	question := &QuestionJudgement{}
+	err := row.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("judgement question not found")
+		}
+		return nil, err
+	}
+	return question, nil
+}
+
+func (db *DB) UpdateQuestionJudgement(question *QuestionJudgement) error {
+	// update judgement sql
+	query := `
+	UPDATE judgement 
+	SET title = ?, answer = ?, standard_answer = ?
+	WHERE id = ?
+	`
+	// execute update judgement
+	result, err := db.sqliteDB.Exec(query, question.Title, question.Answer, question.StandardAnswer, question.Id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("judgement question not found")
+	}
+	return nil
+}
+
+func (db *DB) UpdateQuestionJudgementContext(ctx context.Context, question *QuestionJudgement) error {
+	// update judgement sql
+	query := `
+	UPDATE judgement 
+	SET title = ?, answer = ?, standard_answer = ?
+	WHERE id = ?
+	`
+	// execute update judgement
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Title, question.Answer, question.StandardAnswer, question.Id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("judgement question not found")
+	}
+	return nil
+}
+
+func (db *DB) DeleteQuestionJudgement(id string) error {
+	// update judgement sql
+	query := `DELETE FROM judgement WHERE id = ?`
+	// execute delete judgement
+	result, err := db.sqliteDB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("judgement question not found")
+	}
+	return nil
+}
+
+func (db *DB) DeleteQuestionJudgementContext(ctx context.Context, id string) error {
+	// update judgement sql
+	query := `DELETE FROM judgement WHERE id = ?`
+	// execute delete judgement
+	result, err := db.sqliteDB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("judgement question not found")
+	}
+	return nil
+}
+
+func (db *DB) QueryQuestionsJudgement() ([]*QuestionJudgement, error) {
+	// query judgement questions
+	query := `
+	SELECT id, title, answer, standard_answer
+	FROM judgement
+	`
+	// execute query judgement questions
+	rows, err := db.sqliteDB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch judgement questions from database
+	var questions []*QuestionJudgement
+	for rows.Next() {
+		// query judgement question
+		question := &QuestionJudgement{}
+		if err := rows.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return questions, nil
+}
+
+func (db *DB) QueryQuestionsJudgementContext(ctx context.Context) ([]*QuestionJudgement, error) {
+	// query judgement questions
+	query := `
+	SELECT id, title, answer, standard_answer
+	FROM judgement
+	`
+	// execute query judgement questions
+	rows, err := db.sqliteDB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch judgement questions from database
+	var questions []*QuestionJudgement
+	for rows.Next() {
+		// query judgement question
+		question := &QuestionJudgement{}
+		if err := rows.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer); err != nil {
 			return nil, err
 		}
 		questions = append(questions, question)
