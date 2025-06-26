@@ -81,6 +81,17 @@ func (db *DB) CreateTables() error {
 	if err != nil {
 		return err
 	}
+	// create essay question table
+	sql = `CREATE TABLE IF NOT EXISTS essay (
+		id TEXT PRIMARY KEY NOT NULL,
+		title TEXT NOT NULL,
+		answer TEXT NOT NULL,
+		standard_answer TEXT NOT NULL
+	);`
+	err = db.createQuestionEssayTable(sql)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -926,7 +937,7 @@ func (db *DB) CreateQuestionJudgement(question *QuestionJudgement) (int64, error
 	INSERT INTO judgement (id, title, answer, standard_answer) 
 	VALUES (?, ?, ?, ?)
 	`
-	// perform insert multiple-choice
+	// perform insert judgement
 	result, err := db.sqliteDB.Exec(query, question.Id, question.Title, question.Answer, question.StandardAnswer)
 	if err != nil {
 		var sqliteErr *sqlite.Error
@@ -946,7 +957,7 @@ func (db *DB) CreateQuestionJudgementContext(ctx context.Context, question *Ques
 	INSERT INTO judgement (id, title, answer, standard_answer) 
 	VALUES (?, ?, ?, ?)
 	`
-	// perform insert multiple-choice
+	// perform insert judgement
 	result, err := db.sqliteDB.ExecContext(ctx, query, question.Id, question.Title, question.Answer, question.StandardAnswer)
 	if err != nil {
 		var sqliteErr *sqlite.Error
@@ -1127,6 +1138,232 @@ func (db *DB) QueryQuestionsJudgementContext(ctx context.Context) ([]*QuestionJu
 	for rows.Next() {
 		// query judgement question
 		question := &QuestionJudgement{}
+		if err := rows.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return questions, nil
+}
+
+func (db *DB) createQuestionEssayTable(sql string) error {
+	// create essay table
+	if _, err := db.sqliteDB.Exec(sql); err != nil {
+		return fmt.Errorf("create essay question table failed: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) CreateQuestionEssay(question *QuestionEssay) (int64, error) {
+	// execute essay sql
+	query := `
+	INSERT INTO essay (id, title, answer, standard_answer) 
+	VALUES (?, ?, ?, ?)
+	`
+	// perform insert essay
+	result, err := db.sqliteDB.Exec(query, question.Id, question.Title, question.Answer, question.StandardAnswer)
+	if err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, fmt.Errorf("essay question already exists")
+			}
+		}
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) CreateQuestionEssayContext(ctx context.Context, question *QuestionEssay) (int64, error) {
+	// execute essay sql
+	query := `
+	INSERT INTO essay (id, title, answer, standard_answer) 
+	VALUES (?, ?, ?, ?)
+	`
+	// perform insert essay
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Id, question.Title, question.Answer, question.StandardAnswer)
+	if err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+				return 0, fmt.Errorf("essay question already exists")
+			}
+		}
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) QueryQuestionEssay(id string) (*QuestionEssay, error) {
+	// query essay sql
+	query := `
+	SELECT id, title, answer, standard_answer
+	FROM essay WHERE id = ?
+	`
+	// execute query essay
+	row := db.sqliteDB.QueryRow(query, id)
+	question := &QuestionEssay{}
+	err := row.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("essay question not found")
+		}
+		return nil, err
+	}
+	return question, nil
+}
+
+func (db *DB) QueryQuestionEssayContext(ctx context.Context, id string) (*QuestionEssay, error) {
+	// query essay sql
+	query := `
+	SELECT id, title, answer, standard_answer
+	FROM essay WHERE id = ?
+	`
+	// execute query essay
+	row := db.sqliteDB.QueryRowContext(ctx, query, id)
+	question := &QuestionEssay{}
+	err := row.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("essay question not found")
+		}
+		return nil, err
+	}
+	return question, nil
+}
+
+func (db *DB) UpdateQuestionEssay(question *QuestionEssay) error {
+	// update essay sql
+	query := `
+	UPDATE essay 
+	SET title = ?, answer = ?, standard_answer = ?
+	WHERE id = ?
+	`
+	// execute update essay
+	result, err := db.sqliteDB.Exec(query, question.Title, question.Answer, question.StandardAnswer, question.Id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("essay question not found")
+	}
+	return nil
+}
+
+func (db *DB) UpdateQuestionEssayContext(ctx context.Context, question *QuestionEssay) error {
+	// update essay sql
+	query := `
+	UPDATE essay 
+	SET title = ?, answer = ?, standard_answer = ?
+	WHERE id = ?
+	`
+	// execute update essay
+	result, err := db.sqliteDB.ExecContext(ctx, query, question.Title, question.Answer, question.StandardAnswer, question.Id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("essay question not found")
+	}
+	return nil
+}
+
+func (db *DB) DeleteQuestionEssay(id string) error {
+	// update essay sql
+	query := `DELETE FROM essay WHERE id = ?`
+	// execute delete essay
+	result, err := db.sqliteDB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("essay question not found")
+	}
+	return nil
+}
+
+func (db *DB) DeleteQuestionEssayContext(ctx context.Context, id string) error {
+	// update essay sql
+	query := `DELETE FROM essay WHERE id = ?`
+	// execute delete essay
+	result, err := db.sqliteDB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	// check rows affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("essay question not found")
+	}
+	return nil
+}
+
+func (db *DB) QueryQuestionsEssay() ([]*QuestionEssay, error) {
+	// query essay questions
+	query := `
+	SELECT id, title, answer, standard_answer
+	FROM essay
+	`
+	// execute query essay questions
+	rows, err := db.sqliteDB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch essay questions from database
+	var questions []*QuestionEssay
+	for rows.Next() {
+		// query essay question
+		question := &QuestionEssay{}
+		if err := rows.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return questions, nil
+}
+
+func (db *DB) QueryQuestionsEssayContext(ctx context.Context) ([]*QuestionEssay, error) {
+	// query essay questions
+	query := `
+	SELECT id, title, answer, standard_answer
+	FROM essay
+	`
+	// execute query essay questions
+	rows, err := db.sqliteDB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	// fetch essay questions from database
+	var questions []*QuestionEssay
+	for rows.Next() {
+		// query essay question
+		question := &QuestionEssay{}
 		if err := rows.Scan(&question.Id, &question.Title, &question.Answer, &question.StandardAnswer); err != nil {
 			return nil, err
 		}

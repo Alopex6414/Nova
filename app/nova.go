@@ -127,12 +127,24 @@ func (nova *Nova) Init() {
 	if err != nil {
 		logger.Fatalf("Failed to query judgement questions from database: %s\n", err)
 		fmt.Printf("Failed to query judgement questions from database: %s\n", err)
-		os.Exit(9)
+		os.Exit(10)
 	}
 	for _, question := range judgementQuestions {
 		nova.cache.questionsCache.judgementCache.judgementSet = append(nova.cache.questionsCache.judgementCache.judgementSet, *question)
 	}
 	logger.Info("Successfully query judgement questions from database.")
+	// query essay questions from database
+	logger.Info("Query essay questions from database...")
+	essayQuestions, err := nova.db.QueryQuestionsEssay()
+	if err != nil {
+		logger.Fatalf("Failed to query essay questions from database: %s\n", err)
+		fmt.Printf("Failed to query essay questions from database: %s\n", err)
+		os.Exit(11)
+	}
+	for _, question := range essayQuestions {
+		nova.cache.questionsCache.essayCache.essaySet = append(nova.cache.questionsCache.essayCache.essaySet, *question)
+	}
+	logger.Info("Successfully query essay questions from database.")
 }
 
 func (nova *Nova) Start() {
