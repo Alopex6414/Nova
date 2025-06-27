@@ -36,3 +36,8 @@ app/configure
 
 # logs
 logs
+
+# visual studio
+.vs
+debug
+release
