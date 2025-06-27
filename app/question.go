@@ -186,9 +186,9 @@ func (nova *Nova) handleCreateQuestionMultipleChoice(c *gin.Context, rawData []b
 }
 
 func (nova *Nova) handleCreateQuestionJudgement(c *gin.Context, rawData []byte) {
-	// create question
+	// create judgement question
 	var request QuestionJudgement
-	logger.Infof("handle request create question judgement")
+	logger.Infof("handle request create judgement question")
 	// request body should bind json
 	logger.Debugf("request body bind json format")
 	if err := json.Unmarshal(rawData, &request); err != nil {
@@ -198,24 +198,49 @@ func (nova *Nova) handleCreateQuestionJudgement(c *gin.Context, rawData []byte) 
 	}
 	logger.Debugf("successfully bind request json format")
 	// check request body correctness
-	logger.Debugf("check question judgement is validate")
+	logger.Debugf("check judgement question is validate")
 	b, err := nova.isJudgementQuestionValidate(request)
 	if !b {
 		nova.response400BadRequest(c, err)
-		logger.Errorf("error check question judgement is validate: %v", err)
+		logger.Errorf("error check judgement question is validate: %v", err)
 		return
 	}
-	logger.Debugf("successfully check question judgement is validate")
-	// store created question in data cache
-	logger.Debugf("store question in data cache")
+	logger.Debugf("successfully check judgement question is validate")
+	// update data cache by querying judgement questions in database
+	logger.Debugf("update data cache by querying judgement question in database")
+	err = nova.queryJudgementQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying judgement question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying judgement question in database")
+	// check judgement question existence
+	logger.Debugf("check judgement question is existed")
+	if nova.isJudgementQuestionExisted(strings.ToLower(request.Id)) {
+		nova.response409Conflict(c, errors.New("judgement question already exists"))
+		logger.Errorf("error check judgement question is existed: %v", err)
+		return
+	}
+	logger.Debugf("successfully check judgement question is existed")
+	// store created judgement question in data cache
+	logger.Debugf("store judgement question in data cache")
 	response := QuestionJudgement{
 		Id:             strings.ToLower(request.Id),
 		Title:          request.Title,
 		Answer:         request.Answer,
 		StandardAnswer: request.StandardAnswer,
 	}
-	// nova.createUserInDataCache(response)
-	logger.Debugf("successfully store question in data cache")
+	nova.createJudgementQuestionInDataCache(response)
+	logger.Debugf("successfully store judgement question in data cache")
+	// store created judgement question in database
+	logger.Debugf("store judgement question in database")
+	if err = nova.createJudgementQuestionInDatabase(response.Id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error judgement question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully store judgement question in database")
 	// return response
 	nova.response201Created(c, response)
 	logger.Infof("response status code: %v, body: %v", http.StatusCreated, response)
@@ -223,9 +248,9 @@ func (nova *Nova) handleCreateQuestionJudgement(c *gin.Context, rawData []byte) 
 }
 
 func (nova *Nova) handleCreateQuestionEssay(c *gin.Context, rawData []byte) {
-	// create question
+	// create essay question
 	var request QuestionEssay
-	logger.Infof("handle request create question judgement")
+	logger.Infof("handle request create essay question")
 	// request body should bind json
 	logger.Debugf("request body bind json format")
 	if err := json.Unmarshal(rawData, &request); err != nil {
@@ -235,24 +260,49 @@ func (nova *Nova) handleCreateQuestionEssay(c *gin.Context, rawData []byte) {
 	}
 	logger.Debugf("successfully bind request json format")
 	// check request body correctness
-	logger.Debugf("check question essay is validate")
+	logger.Debugf("check essay question is validate")
 	b, err := nova.isEssayQuestionValidate(request)
 	if !b {
 		nova.response400BadRequest(c, err)
-		logger.Errorf("error check question essay is validate: %v", err)
+		logger.Errorf("error check essay question is validate: %v", err)
 		return
 	}
-	logger.Debugf("successfully check question essay is validate")
-	// store created question in data cache
-	logger.Debugf("store question in data cache")
+	logger.Debugf("successfully check essay question is validate")
+	// update data cache by querying essay questions in database
+	logger.Debugf("update data cache by querying essay question in database")
+	err = nova.queryEssayQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying essay question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying essay question in database")
+	// check essay question existence
+	logger.Debugf("check essay question is existed")
+	if nova.isEssayQuestionExisted(strings.ToLower(request.Id)) {
+		nova.response409Conflict(c, errors.New("essay question already exists"))
+		logger.Errorf("error check essay question is existed: %v", err)
+		return
+	}
+	logger.Debugf("successfully check essay question is existed")
+	// store created essay question in data cache
+	logger.Debugf("store judgement question in data cache")
 	response := QuestionEssay{
 		Id:             strings.ToLower(request.Id),
 		Title:          request.Title,
 		Answer:         request.Answer,
 		StandardAnswer: request.StandardAnswer,
 	}
-	// nova.createUserInDataCache(response)
-	logger.Debugf("successfully store question in data cache")
+	nova.createEssayQuestionInDataCache(response)
+	logger.Debugf("successfully store essay question in data cache")
+	// store created essay question in database
+	logger.Debugf("store essay question in database")
+	if err = nova.createEssayQuestionInDatabase(response.Id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error essay question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully store essay question in database")
 	// return response
 	nova.response201Created(c, response)
 	logger.Infof("response status code: %v, body: %v", http.StatusCreated, response)
