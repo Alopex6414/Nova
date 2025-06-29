@@ -48,16 +48,21 @@
             // textBoxUserName
             // 
             this.textBoxUserName.Location = new System.Drawing.Point(151, 65);
+            this.textBoxUserName.MaxLength = 20;
             this.textBoxUserName.Name = "textBoxUserName";
             this.textBoxUserName.Size = new System.Drawing.Size(325, 35);
             this.textBoxUserName.TabIndex = 1;
+            this.textBoxUserName.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.textBoxUserName_KeyPress);
             // 
             // textBoxPassword
             // 
             this.textBoxPassword.Location = new System.Drawing.Point(151, 136);
+            this.textBoxPassword.MaxLength = 20;
             this.textBoxPassword.Name = "textBoxPassword";
+            this.textBoxPassword.PasswordChar = '*';
             this.textBoxPassword.Size = new System.Drawing.Size(325, 35);
             this.textBoxPassword.TabIndex = 3;
+            this.textBoxPassword.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.textBoxPassword_KeyPress);
             // 
             // labelPassword
             // 
@@ -70,21 +75,23 @@
             // 
             // buttonOK
             // 
-            this.buttonOK.Location = new System.Drawing.Point(79, 210);
+            this.buttonOK.Location = new System.Drawing.Point(105, 210);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(132, 42);
             this.buttonOK.TabIndex = 4;
             this.buttonOK.Text = "确定";
             this.buttonOK.UseVisualStyleBackColor = true;
+            this.buttonOK.Click += new System.EventHandler(this.buttonOK_Click);
             // 
             // buttonCancel
             // 
-            this.buttonCancel.Location = new System.Drawing.Point(344, 210);
+            this.buttonCancel.Location = new System.Drawing.Point(310, 210);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(132, 42);
             this.buttonCancel.TabIndex = 5;
             this.buttonCancel.Text = "取消";
             this.buttonCancel.UseVisualStyleBackColor = true;
+            this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
             // 
             // FormLogin
             // 
