@@ -358,6 +358,9 @@ func (nova *Nova) isRequiredFields(data map[string]interface{}, model interface{
 			if _, exists := data[tag]; !exists {
 				return false
 			}
+			if reflect.TypeOf(data[tag]) != field.Type {
+				return false
+			}
 		}
 	}
 	return true
