@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -47,6 +48,9 @@ namespace novaUI
                 MessageBox.Show("密码需要包含大小写字母、数字和特殊符号！");
                 return;
             }
+            // http request
+            HttpClient client = new HttpClient();
+            //client.GetAsync
         }
 
         private void buttonCancel_Click(object sender, EventArgs e)
