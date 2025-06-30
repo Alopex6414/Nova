@@ -59,3 +59,7 @@ type QuestionAnswer struct {
 	AnswerMark string `json:"answerMark" yaml:"answerMark" binding:"required"`
 	AnswerText string `json:"answerText" yaml:"answerText" binding:"required"`
 }
+
+type QuestionDeleteRequest struct {
+	Type string `form:"type" binding:"required"`
+}

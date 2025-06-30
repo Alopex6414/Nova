@@ -310,6 +310,88 @@ func (nova *Nova) handleCreateQuestionEssay(c *gin.Context, rawData []byte) {
 }
 
 func (nova *Nova) HandleDeleteQuestion(c *gin.Context) {
+	// delete question
+	var request QuestionDeleteRequest
+	logger.Infof("handle request delete question")
+	// request body should bind json
+	logger.Debugf("request body bind json format")
+	err := c.ShouldBindQuery(&request)
+	if err != nil {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request in query: %v", err)
+		return
+	}
+	logger.Debugf("successfully bind request in query")
+	// binging function according request type
+	switch request.Type {
+	case "single_choice":
+		nova.handleDeleteQuestionSingleChoice(c)
+	case "multiple_choice":
+		nova.handleDeleteQuestionMultipleChoice(c)
+	case "judgement":
+		nova.handleDeleteQuestionJudgement(c)
+	case "essay":
+		nova.handleDeleteQuestionEssay(c)
+	default:
+		nova.response400BadRequest(c, errors.New("invalid request type"))
+	}
+	return
+}
+
+func (nova *Nova) handleDeleteQuestionSingleChoice(c *gin.Context) {
+	// extract single choice question id from uri
+	id := strings.ToLower(c.Param("Id"))
+	// request question Id correctness
+	logger.Debugf("check single-choice question Id is validate")
+	if err := uuid.Validate(id); err != nil {
+		nova.response400BadRequest(c, errors.New("single-choice question Id format incorrect"))
+		logger.Error("error single-choice question Id is validate")
+		return
+	}
+	logger.Debugf("successfully check single-choice question Id is validate")
+	// update data cache by querying single choice question in database
+	logger.Debugf("update data cache by querying single choice questions in database")
+	err := nova.querySingleChoiceQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying single choice questions in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying single choice questions in database")
+	// check single choice question existence
+	logger.Debugf("check single-choice question is validate")
+	if !nova.isSingleChoiceQuestionExisted(id) {
+		nova.response404NotFound(c, errors.New("single-choice question not found"))
+		logger.Error("error check single-choice question is validate")
+		return
+	}
+	logger.Debugf("successfully check single-choice question is validate")
+	// delete single choice question from database
+	logger.Debugf("delete single choice question in database")
+	if err := nova.deleteSingleChoiceQuestionInDatabase(id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Error("error delete single choice question in database")
+		return
+	}
+	logger.Debugf("successfully delete single choice question in database")
+	// delete single-choice question from data cache
+	logger.Debugf("delete single choice question in data cache")
+	nova.deleteSingleChoiceQuestionInDataCache(id)
+	// return response
+	nova.response204NoContent(c, nil)
+	logger.Infof("response status code: %v, body: %v", http.StatusNoContent, nil)
+	return
+}
+
+func (nova *Nova) handleDeleteQuestionMultipleChoice(c *gin.Context) {
+
+}
+
+func (nova *Nova) handleDeleteQuestionJudgement(c *gin.Context) {
+
+}
+
+func (nova *Nova) handleDeleteQuestionEssay(c *gin.Context) {
 
 }
 
@@ -358,9 +440,9 @@ func (nova *Nova) isRequiredFields(data map[string]interface{}, model interface{
 			if _, exists := data[tag]; !exists {
 				return false
 			}
-			if reflect.TypeOf(data[tag]) != field.Type {
-				return false
-			}
+			//if reflect.TypeOf(data[tag]) != field.Type {
+			//	return false
+			//}
 		}
 	}
 	return true
@@ -493,6 +575,85 @@ func (nova *Nova) createSingleChoiceQuestionInDataCache(question QuestionSingleC
 	return
 }
 
+func (nova *Nova) deleteSingleChoiceQuestionInDataCache(id string) {
+	// enable single-choice question cache write lock
+	nova.cache.questionsCache.singleChoiceCache.mutex.Lock()
+	defer nova.cache.questionsCache.singleChoiceCache.mutex.Unlock()
+	// search & delete single-choice question from data cache
+	for k, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
+		if v.Id == id {
+			nova.cache.questionsCache.singleChoiceCache.singleChoiceSet = append(nova.cache.questionsCache.singleChoiceCache.singleChoiceSet[:k], nova.cache.questionsCache.singleChoiceCache.singleChoiceSet[k+1:]...)
+			break
+		}
+	}
+	return
+}
+
+func (nova *Nova) createSingleChoiceQuestionInDatabase(id string) error {
+	// enable single-choice question cache read lock
+	nova.cache.questionsCache.singleChoiceCache.mutex.RLock()
+	defer nova.cache.questionsCache.singleChoiceCache.mutex.RUnlock()
+	// search Id in data cache
+	b := false
+	question := QuestionSingleChoice{}
+	for _, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
+		if v.Id == id {
+			question = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("single-choice question not found")
+	}
+	// create single-choice question in database
+	if _, err := nova.db.CreateQuestionSingleChoice(&question); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (nova *Nova) deleteSingleChoiceQuestionInDatabase(id string) error {
+	// enable single choice question cache read lock
+	nova.cache.questionsCache.singleChoiceCache.mutex.RLock()
+	defer nova.cache.questionsCache.singleChoiceCache.mutex.RUnlock()
+	// search single choice question Id in data cache
+	b := false
+	for _, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
+		if v.Id == id {
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("single-choice question not found")
+	}
+	// delete single-choice question in database
+	if err := nova.db.DeleteQuestionSingleChoice(id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (nova *Nova) querySingleChoiceQuestionInDatabase(id string) error {
+	// enable single-choice question cache write lock
+	nova.cache.questionsCache.singleChoiceCache.mutex.Lock()
+	defer nova.cache.questionsCache.singleChoiceCache.mutex.Unlock()
+	// query single-choice question from database
+	question, err := nova.db.QueryQuestionSingleChoice(id)
+	if err != nil {
+		return err
+	}
+	// update single-choice question in data cache
+	for k, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
+		if v.Id == id {
+			nova.cache.questionsCache.singleChoiceCache.singleChoiceSet[k] = *question
+			break
+		}
+	}
+	return nil
+}
+
 func (nova *Nova) querySingleChoiceQuestionsInDatabase() error {
 	// enable single-choice question cache write lock
 	nova.cache.questionsCache.singleChoiceCache.mutex.Lock()
@@ -517,30 +678,6 @@ func (nova *Nova) querySingleChoiceQuestionsInDatabase() error {
 		if !b {
 			nova.cache.questionsCache.singleChoiceCache.singleChoiceSet = append(nova.cache.questionsCache.singleChoiceCache.singleChoiceSet, *question)
 		}
-	}
-	return nil
-}
-
-func (nova *Nova) createSingleChoiceQuestionInDatabase(id string) error {
-	// enable single-choice question cache read lock
-	nova.cache.questionsCache.singleChoiceCache.mutex.RLock()
-	defer nova.cache.questionsCache.singleChoiceCache.mutex.RUnlock()
-	// search Id in data cache
-	b := false
-	question := QuestionSingleChoice{}
-	for _, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
-		if v.Id == id {
-			question = v
-			b = true
-			break
-		}
-	}
-	if !b {
-		return errors.New("single-choice question not found")
-	}
-	// create single-choice question in database
-	if _, err := nova.db.CreateQuestionSingleChoice(&question); err != nil {
-		return err
 	}
 	return nil
 }
