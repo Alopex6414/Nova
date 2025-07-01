@@ -320,15 +320,144 @@ func (nova *Nova) HandleDeleteQuestionSingleChoice(c *gin.Context) {
 }
 
 func (nova *Nova) HandleDeleteQuestionMultipleChoice(c *gin.Context) {
-
+	// delete multiple-choice question
+	logger.Infof("handle request delete multiple-choice question")
+	// extract multiple-choice question id from uri
+	id := strings.ToLower(c.Param("Id"))
+	// request question Id correctness
+	logger.Debugf("check multiple-choice question Id is validate")
+	if err := uuid.Validate(id); err != nil {
+		nova.response400BadRequest(c, errors.New("multiple-choice question Id format incorrect"))
+		logger.Error("error multiple-choice question Id is validate")
+		return
+	}
+	logger.Debugf("successfully check multiple-choice question Id is validate")
+	// update data cache by querying multiple-choice question in database
+	logger.Debugf("update data cache by querying multiple-choice questions in database")
+	err := nova.queryMultipleChoiceQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying multiple-choice questions in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying multiple-choice questions in database")
+	// check multiple-choice question existence
+	logger.Debugf("check multiple-choice question is validate")
+	if !nova.isMultipleChoiceQuestionExisted(id) {
+		nova.response404NotFound(c, errors.New("multiple-choice question not found"))
+		logger.Error("error check multiple-choice question is validate")
+		return
+	}
+	logger.Debugf("successfully check multiple-choice question is validate")
+	// delete multiple-choice question from database
+	logger.Debugf("delete multiple-choice question in database")
+	if err := nova.deleteMultipleChoiceQuestionInDatabase(id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Error("error delete multiple-choice question in database")
+		return
+	}
+	logger.Debugf("successfully delete multiple-choice question in database")
+	// delete multiple-choice question from data cache
+	logger.Debugf("delete multiple-choice question in data cache")
+	nova.deleteMultipleChoiceQuestionInDataCache(id)
+	// return response
+	nova.response204NoContent(c, nil)
+	logger.Infof("response status code: %v, body: %v", http.StatusNoContent, nil)
+	return
 }
 
 func (nova *Nova) HandleDeleteQuestionJudgement(c *gin.Context) {
-
+	// delete judgement question
+	logger.Infof("handle request delete judgement question")
+	// extract judgement question id from uri
+	id := strings.ToLower(c.Param("Id"))
+	// request question Id correctness
+	logger.Debugf("check judgement question Id is validate")
+	if err := uuid.Validate(id); err != nil {
+		nova.response400BadRequest(c, errors.New("judgement question Id format incorrect"))
+		logger.Error("error judgement question Id is validate")
+		return
+	}
+	logger.Debugf("successfully check judgement question Id is validate")
+	// update data cache by querying judgement question in database
+	logger.Debugf("update data cache by querying judgement question in database")
+	err := nova.queryJudgementQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying judgement questions in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying judgement question in database")
+	// check judgement question existence
+	logger.Debugf("check judgement question is validate")
+	if !nova.isJudgementQuestionExisted(id) {
+		nova.response404NotFound(c, errors.New("judgement question not found"))
+		logger.Error("error check judgement question is validate")
+		return
+	}
+	logger.Debugf("successfully check judgement question is validate")
+	// delete judgement question from database
+	logger.Debugf("delete judgement question in database")
+	if err := nova.deleteJudgementQuestionInDatabase(id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Error("error delete judgement question in database")
+		return
+	}
+	logger.Debugf("successfully delete judgement question in database")
+	// delete judgement question from data cache
+	logger.Debugf("delete judgement question in data cache")
+	nova.deleteJudgementQuestionInDataCache(id)
+	// return response
+	nova.response204NoContent(c, nil)
+	logger.Infof("response status code: %v, body: %v", http.StatusNoContent, nil)
+	return
 }
 
 func (nova *Nova) HandleDeleteQuestionEssay(c *gin.Context) {
-
+	// delete essay question
+	logger.Infof("handle request delete essay question")
+	// extract essay question id from uri
+	id := strings.ToLower(c.Param("Id"))
+	// request question Id correctness
+	logger.Debugf("check essay question Id is validate")
+	if err := uuid.Validate(id); err != nil {
+		nova.response400BadRequest(c, errors.New("essay question Id format incorrect"))
+		logger.Error("error essay question Id is validate")
+		return
+	}
+	logger.Debugf("successfully check essay question Id is validate")
+	// update data cache by querying essay question in database
+	logger.Debugf("update data cache by querying essay question in database")
+	err := nova.queryEssayQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying essay questions in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying essay question in database")
+	// check essay question existence
+	logger.Debugf("check essay question is validate")
+	if !nova.isEssayQuestionExisted(id) {
+		nova.response404NotFound(c, errors.New("essay question not found"))
+		logger.Error("error check essay question is validate")
+		return
+	}
+	logger.Debugf("successfully check essay question is validate")
+	// delete essay question from database
+	logger.Debugf("delete essay question in database")
+	if err := nova.deleteEssayQuestionInDatabase(id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Error("error delete essay question in database")
+		return
+	}
+	logger.Debugf("successfully delete essay question in database")
+	// delete essay question from data cache
+	logger.Debugf("delete essay question in data cache")
+	nova.deleteEssayQuestionInDataCache(id)
+	// return response
+	nova.response204NoContent(c, nil)
+	logger.Infof("response status code: %v, body: %v", http.StatusNoContent, nil)
+	return
 }
 
 func (nova *Nova) HandleModifyQuestion(c *gin.Context) {
@@ -556,6 +685,66 @@ func (nova *Nova) createMultipleChoiceQuestionInDataCache(question QuestionMulti
 	return
 }
 
+func (nova *Nova) deleteMultipleChoiceQuestionInDataCache(id string) {
+	// enable multiple-choice question cache write lock
+	nova.cache.questionsCache.multipleChoiceCache.mutex.Lock()
+	defer nova.cache.questionsCache.multipleChoiceCache.mutex.Unlock()
+	// search & delete multiple-choice question from data cache
+	for k, v := range nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet {
+		if v.Id == id {
+			nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet = append(nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet[:k], nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet[k+1:]...)
+			break
+		}
+	}
+	return
+}
+
+func (nova *Nova) createMultipleChoiceQuestionInDatabase(id string) error {
+	// enable multiple-choice question cache read lock
+	nova.cache.questionsCache.multipleChoiceCache.mutex.RLock()
+	defer nova.cache.questionsCache.multipleChoiceCache.mutex.RUnlock()
+	// search Id in data cache
+	b := false
+	question := QuestionMultipleChoice{}
+	for _, v := range nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet {
+		if v.Id == id {
+			question = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("multiple-choice question not found")
+	}
+	// create multiple-choice question in database
+	if _, err := nova.db.CreateQuestionMultipleChoice(&question); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (nova *Nova) deleteMultipleChoiceQuestionInDatabase(id string) error {
+	// enable multiple-choice question cache read lock
+	nova.cache.questionsCache.multipleChoiceCache.mutex.RLock()
+	defer nova.cache.questionsCache.multipleChoiceCache.mutex.RUnlock()
+	// search multiple-choice question Id in data cache
+	b := false
+	for _, v := range nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet {
+		if v.Id == id {
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("multiple-choice question not found")
+	}
+	// delete multiple-choice question in database
+	if err := nova.db.DeleteQuestionMultipleChoice(id); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (nova *Nova) queryMultipleChoiceQuestionsInDatabase() error {
 	// enable multiple-choice question cache write lock
 	nova.cache.questionsCache.multipleChoiceCache.mutex.Lock()
@@ -584,30 +773,6 @@ func (nova *Nova) queryMultipleChoiceQuestionsInDatabase() error {
 	return nil
 }
 
-func (nova *Nova) createMultipleChoiceQuestionInDatabase(id string) error {
-	// enable multiple-choice question cache read lock
-	nova.cache.questionsCache.multipleChoiceCache.mutex.RLock()
-	defer nova.cache.questionsCache.multipleChoiceCache.mutex.RUnlock()
-	// search Id in data cache
-	b := false
-	question := QuestionMultipleChoice{}
-	for _, v := range nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet {
-		if v.Id == id {
-			question = v
-			b = true
-			break
-		}
-	}
-	if !b {
-		return errors.New("multiple-choice question not found")
-	}
-	// create multiple-choice question in database
-	if _, err := nova.db.CreateQuestionMultipleChoice(&question); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (nova *Nova) createJudgementQuestionInDataCache(question QuestionJudgement) {
 	// enable judgement question cache write lock
 	nova.cache.questionsCache.judgementCache.mutex.Lock()
@@ -615,6 +780,66 @@ func (nova *Nova) createJudgementQuestionInDataCache(question QuestionJudgement)
 	// append judgement question in data cache
 	nova.cache.questionsCache.judgementCache.judgementSet = append(nova.cache.questionsCache.judgementCache.judgementSet, question)
 	return
+}
+
+func (nova *Nova) deleteJudgementQuestionInDataCache(id string) {
+	// enable judgement question cache write lock
+	nova.cache.questionsCache.judgementCache.mutex.Lock()
+	defer nova.cache.questionsCache.judgementCache.mutex.Unlock()
+	// search & delete judgement question from data cache
+	for k, v := range nova.cache.questionsCache.judgementCache.judgementSet {
+		if v.Id == id {
+			nova.cache.questionsCache.judgementCache.judgementSet = append(nova.cache.questionsCache.judgementCache.judgementSet[:k], nova.cache.questionsCache.judgementCache.judgementSet[k+1:]...)
+			break
+		}
+	}
+	return
+}
+
+func (nova *Nova) createJudgementQuestionInDatabase(id string) error {
+	// enable judgement question cache read lock
+	nova.cache.questionsCache.judgementCache.mutex.RLock()
+	defer nova.cache.questionsCache.judgementCache.mutex.RUnlock()
+	// search Id in data cache
+	b := false
+	question := QuestionJudgement{}
+	for _, v := range nova.cache.questionsCache.judgementCache.judgementSet {
+		if v.Id == id {
+			question = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("judgement question not found")
+	}
+	// create judgement question in database
+	if _, err := nova.db.CreateQuestionJudgement(&question); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (nova *Nova) deleteJudgementQuestionInDatabase(id string) error {
+	// enable judgement question cache read lock
+	nova.cache.questionsCache.judgementCache.mutex.RLock()
+	defer nova.cache.questionsCache.judgementCache.mutex.RUnlock()
+	// search judgement question Id in data cache
+	b := false
+	for _, v := range nova.cache.questionsCache.judgementCache.judgementSet {
+		if v.Id == id {
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("judgement question not found")
+	}
+	// delete judgement question in database
+	if err := nova.db.DeleteQuestionJudgement(id); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (nova *Nova) queryJudgementQuestionsInDatabase() error {
@@ -645,30 +870,6 @@ func (nova *Nova) queryJudgementQuestionsInDatabase() error {
 	return nil
 }
 
-func (nova *Nova) createJudgementQuestionInDatabase(id string) error {
-	// enable judgement question cache read lock
-	nova.cache.questionsCache.judgementCache.mutex.RLock()
-	defer nova.cache.questionsCache.judgementCache.mutex.RUnlock()
-	// search Id in data cache
-	b := false
-	question := QuestionJudgement{}
-	for _, v := range nova.cache.questionsCache.judgementCache.judgementSet {
-		if v.Id == id {
-			question = v
-			b = true
-			break
-		}
-	}
-	if !b {
-		return errors.New("judgement question not found")
-	}
-	// create judgement question in database
-	if _, err := nova.db.CreateQuestionJudgement(&question); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (nova *Nova) createEssayQuestionInDataCache(question QuestionEssay) {
 	// enable essay question cache write lock
 	nova.cache.questionsCache.essayCache.mutex.Lock()
@@ -676,6 +877,66 @@ func (nova *Nova) createEssayQuestionInDataCache(question QuestionEssay) {
 	// append essay question in data cache
 	nova.cache.questionsCache.essayCache.essaySet = append(nova.cache.questionsCache.essayCache.essaySet, question)
 	return
+}
+
+func (nova *Nova) deleteEssayQuestionInDataCache(id string) {
+	// enable essay question cache write lock
+	nova.cache.questionsCache.essayCache.mutex.Lock()
+	defer nova.cache.questionsCache.essayCache.mutex.Unlock()
+	// search & delete essay question from data cache
+	for k, v := range nova.cache.questionsCache.essayCache.essaySet {
+		if v.Id == id {
+			nova.cache.questionsCache.essayCache.essaySet = append(nova.cache.questionsCache.essayCache.essaySet[:k], nova.cache.questionsCache.essayCache.essaySet[k+1:]...)
+			break
+		}
+	}
+	return
+}
+
+func (nova *Nova) createEssayQuestionInDatabase(id string) error {
+	// enable essay question cache read lock
+	nova.cache.questionsCache.essayCache.mutex.RLock()
+	defer nova.cache.questionsCache.essayCache.mutex.RUnlock()
+	// search Id in data cache
+	b := false
+	question := QuestionEssay{}
+	for _, v := range nova.cache.questionsCache.essayCache.essaySet {
+		if v.Id == id {
+			question = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("essay question not found")
+	}
+	// create essay question in database
+	if _, err := nova.db.CreateQuestionEssay(&question); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (nova *Nova) deleteEssayQuestionInDatabase(id string) error {
+	// enable essay question cache read lock
+	nova.cache.questionsCache.essayCache.mutex.RLock()
+	defer nova.cache.questionsCache.essayCache.mutex.RUnlock()
+	// search essay question Id in data cache
+	b := false
+	for _, v := range nova.cache.questionsCache.essayCache.essaySet {
+		if v.Id == id {
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("essay question not found")
+	}
+	// delete essay question in database
+	if err := nova.db.DeleteQuestionEssay(id); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (nova *Nova) queryEssayQuestionsInDatabase() error {
@@ -702,30 +963,6 @@ func (nova *Nova) queryEssayQuestionsInDatabase() error {
 		if !b {
 			nova.cache.questionsCache.essayCache.essaySet = append(nova.cache.questionsCache.essayCache.essaySet, *question)
 		}
-	}
-	return nil
-}
-
-func (nova *Nova) createEssayQuestionInDatabase(id string) error {
-	// enable essay question cache read lock
-	nova.cache.questionsCache.essayCache.mutex.RLock()
-	defer nova.cache.questionsCache.essayCache.mutex.RUnlock()
-	// search Id in data cache
-	b := false
-	question := QuestionEssay{}
-	for _, v := range nova.cache.questionsCache.essayCache.essaySet {
-		if v.Id == id {
-			question = v
-			b = true
-			break
-		}
-	}
-	if !b {
-		return errors.New("essay question not found")
-	}
-	// create essay question in database
-	if _, err := nova.db.CreateQuestionEssay(&question); err != nil {
-		return err
 	}
 	return nil
 }

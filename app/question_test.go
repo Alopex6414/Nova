@@ -33,6 +33,7 @@ func setupQuestionTestRouter() *gin.Engine {
 		novaService.POST("/question/single-choice/:Id", nova.HandleCreateQuestionSingleChoice)
 		novaService.DELETE("/question/single-choice/:Id", nova.HandleDeleteQuestionSingleChoice)
 		novaService.POST("/question/multiple-choice/:Id", nova.HandleCreateQuestionMultipleChoice)
+		novaService.DELETE("/question/multiple-choice/:Id", nova.HandleDeleteQuestionMultipleChoice)
 		novaService.POST("/question/judgement/:Id", nova.HandleCreateQuestionJudgement)
 		novaService.POST("/question/essay/:Id", nova.HandleCreateQuestionEssay)
 		novaService.PUT("/question/:Id", nova.HandleUpdateQuestion)
