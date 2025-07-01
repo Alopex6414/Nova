@@ -1,13 +1,12 @@
 package app
 
 import (
-	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
 	"nova/logger"
-	"reflect"
 	"strings"
 )
 
@@ -24,50 +23,13 @@ func (nova *Nova) HandleCreateQuestionId(c *gin.Context) {
 	return
 }
 
-func (nova *Nova) HandleCreateQuestion(c *gin.Context) {
-	// create question
-	logger.Infof("handle request create question")
-	// get raw data from request body
-	logger.Debugf("get raw data from request body")
-	rawData, err := c.GetRawData()
-	if err != nil {
-		nova.response400BadRequest(c, err)
-		logger.Errorf("error get raw data from request body: %v", err)
-		return
-	}
-	logger.Debugf("successfully get raw data from request body")
-	// reflect request type
-	logger.Debugf("reflect request type")
-	reqType, err := nova.reflectRequestType(rawData)
-	if err != nil {
-		nova.response400BadRequest(c, err)
-		logger.Errorf("error reflect request type: %v", err)
-		return
-	}
-	logger.Debugf("successfully reflect request type")
-	// binding structure according request type
-	switch reqType {
-	case "single_choice":
-		nova.handleCreateQuestionSingleChoice(c, rawData)
-	case "multiple_choice":
-		nova.handleCreateQuestionMultipleChoice(c, rawData)
-	case "judgement":
-		nova.handleCreateQuestionJudgement(c, rawData)
-	case "essay":
-		nova.handleCreateQuestionEssay(c, rawData)
-	default:
-		nova.response400BadRequest(c, errors.New("invalid request type"))
-	}
-	return
-}
-
-func (nova *Nova) handleCreateQuestionSingleChoice(c *gin.Context, rawData []byte) {
+func (nova *Nova) HandleCreateQuestionSingleChoice(c *gin.Context) {
 	// create single-choice question
 	var request QuestionSingleChoice
 	logger.Infof("handle request create single-choice question")
 	// request body should bind json
 	logger.Debugf("request body bind json format")
-	if err := json.Unmarshal(rawData, &request); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		nova.response400BadRequest(c, err)
 		logger.Errorf("error bind request to json: %v", err)
 		return
@@ -123,13 +85,13 @@ func (nova *Nova) handleCreateQuestionSingleChoice(c *gin.Context, rawData []byt
 	return
 }
 
-func (nova *Nova) handleCreateQuestionMultipleChoice(c *gin.Context, rawData []byte) {
+func (nova *Nova) HandleCreateQuestionMultipleChoice(c *gin.Context) {
 	// create multiple-choice question
 	var request QuestionMultipleChoice
 	logger.Infof("handle request create multiple-choice question")
 	// request body should bind json
 	logger.Debugf("request body bind json format")
-	if err := json.Unmarshal(rawData, &request); err != nil {
+	if err := c.BindJSON(&request); err != nil {
 		nova.response400BadRequest(c, err)
 		logger.Errorf("error bind request to json: %v", err)
 		return
@@ -185,13 +147,14 @@ func (nova *Nova) handleCreateQuestionMultipleChoice(c *gin.Context, rawData []b
 	return
 }
 
-func (nova *Nova) handleCreateQuestionJudgement(c *gin.Context, rawData []byte) {
+func (nova *Nova) HandleCreateQuestionJudgement(c *gin.Context) {
 	// create judgement question
 	var request QuestionJudgement
 	logger.Infof("handle request create judgement question")
 	// request body should bind json
 	logger.Debugf("request body bind json format")
-	if err := json.Unmarshal(rawData, &request); err != nil {
+	if err := c.BindJSON(&request); err != nil {
+		fmt.Println(err.Error())
 		nova.response400BadRequest(c, err)
 		logger.Errorf("error bind request to json: %v", err)
 		return
@@ -247,13 +210,13 @@ func (nova *Nova) handleCreateQuestionJudgement(c *gin.Context, rawData []byte) 
 	return
 }
 
-func (nova *Nova) handleCreateQuestionEssay(c *gin.Context, rawData []byte) {
+func (nova *Nova) HandleCreateQuestionEssay(c *gin.Context) {
 	// create essay question
 	var request QuestionEssay
 	logger.Infof("handle request create essay question")
 	// request body should bind json
 	logger.Debugf("request body bind json format")
-	if err := json.Unmarshal(rawData, &request); err != nil {
+	if err := c.BindJSON(&request); err != nil {
 		nova.response400BadRequest(c, err)
 		logger.Errorf("error bind request to json: %v", err)
 		return
@@ -309,36 +272,9 @@ func (nova *Nova) handleCreateQuestionEssay(c *gin.Context, rawData []byte) {
 	return
 }
 
-func (nova *Nova) HandleDeleteQuestion(c *gin.Context) {
-	// delete question
-	var request QuestionDeleteRequest
-	logger.Infof("handle request delete question")
-	// request body should bind json
-	logger.Debugf("request body bind json format")
-	err := c.ShouldBindQuery(&request)
-	if err != nil {
-		nova.response400BadRequest(c, err)
-		logger.Errorf("error bind request in query: %v", err)
-		return
-	}
-	logger.Debugf("successfully bind request in query")
-	// binging function according request type
-	switch request.Type {
-	case "single_choice":
-		nova.handleDeleteQuestionSingleChoice(c)
-	case "multiple_choice":
-		nova.handleDeleteQuestionMultipleChoice(c)
-	case "judgement":
-		nova.handleDeleteQuestionJudgement(c)
-	case "essay":
-		nova.handleDeleteQuestionEssay(c)
-	default:
-		nova.response400BadRequest(c, errors.New("invalid request type"))
-	}
-	return
-}
-
-func (nova *Nova) handleDeleteQuestionSingleChoice(c *gin.Context) {
+func (nova *Nova) HandleDeleteQuestionSingleChoice(c *gin.Context) {
+	// delete single choice question
+	logger.Infof("handle request delete single-choice question")
 	// extract single choice question id from uri
 	id := strings.ToLower(c.Param("Id"))
 	// request question Id correctness
@@ -350,14 +286,14 @@ func (nova *Nova) handleDeleteQuestionSingleChoice(c *gin.Context) {
 	}
 	logger.Debugf("successfully check single-choice question Id is validate")
 	// update data cache by querying single choice question in database
-	logger.Debugf("update data cache by querying single choice questions in database")
+	logger.Debugf("update data cache by querying single-choice questions in database")
 	err := nova.querySingleChoiceQuestionsInDatabase()
 	if err != nil {
 		nova.response500InternalServerError(c, err)
-		logger.Errorf("error update data cache by querying single choice questions in database: %v", err)
+		logger.Errorf("error update data cache by querying single-choice questions in database: %v", err)
 		return
 	}
-	logger.Debugf("successfully update data cache by querying single choice questions in database")
+	logger.Debugf("successfully update data cache by querying single-choice questions in database")
 	// check single choice question existence
 	logger.Debugf("check single-choice question is validate")
 	if !nova.isSingleChoiceQuestionExisted(id) {
@@ -367,15 +303,15 @@ func (nova *Nova) handleDeleteQuestionSingleChoice(c *gin.Context) {
 	}
 	logger.Debugf("successfully check single-choice question is validate")
 	// delete single choice question from database
-	logger.Debugf("delete single choice question in database")
+	logger.Debugf("delete single-choice question in database")
 	if err := nova.deleteSingleChoiceQuestionInDatabase(id); err != nil {
 		nova.response500InternalServerError(c, err)
-		logger.Error("error delete single choice question in database")
+		logger.Error("error delete single-choice question in database")
 		return
 	}
-	logger.Debugf("successfully delete single choice question in database")
+	logger.Debugf("successfully delete single-choice question in database")
 	// delete single-choice question from data cache
-	logger.Debugf("delete single choice question in data cache")
+	logger.Debugf("delete single-choice question in data cache")
 	nova.deleteSingleChoiceQuestionInDataCache(id)
 	// return response
 	nova.response204NoContent(c, nil)
@@ -383,15 +319,15 @@ func (nova *Nova) handleDeleteQuestionSingleChoice(c *gin.Context) {
 	return
 }
 
-func (nova *Nova) handleDeleteQuestionMultipleChoice(c *gin.Context) {
+func (nova *Nova) HandleDeleteQuestionMultipleChoice(c *gin.Context) {
 
 }
 
-func (nova *Nova) handleDeleteQuestionJudgement(c *gin.Context) {
+func (nova *Nova) HandleDeleteQuestionJudgement(c *gin.Context) {
 
 }
 
-func (nova *Nova) handleDeleteQuestionEssay(c *gin.Context) {
+func (nova *Nova) HandleDeleteQuestionEssay(c *gin.Context) {
 
 }
 
@@ -405,77 +341,6 @@ func (nova *Nova) HandleQueryQuestion(c *gin.Context) {
 
 func (nova *Nova) HandleUpdateQuestion(c *gin.Context) {
 
-}
-
-func (nova *Nova) reflectRequestType(rawData []byte) (string, error) {
-	var temp map[string]interface{}
-	// unmarshal raw data to temp map interface
-	if err := json.Unmarshal(rawData, &temp); err != nil {
-		return "", err
-	}
-	// check mandatory segment existence
-	if nova.isRequiredFields(temp, QuestionSingleChoice{}) {
-		return "single_choice", nil
-	}
-	if nova.isRequiredFields(temp, QuestionMultipleChoice{}) {
-		return "multiple_choice", nil
-	}
-	if nova.isRequiredFields(temp, QuestionJudgement{}) {
-		return "judgement", nil
-	}
-	if nova.isRequiredFields(temp, QuestionEssay{}) {
-		return "essay", nil
-	}
-	return "", errors.New("invalid request")
-}
-
-func (nova *Nova) isRequiredFields(data map[string]interface{}, model interface{}) bool {
-	// reflect type of model
-	t := reflect.TypeOf(model)
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		tag := field.Tag.Get("json")
-		binding := field.Tag.Get("binding")
-		if tag != "" && nova.containsBinding(binding, "required") {
-			if _, exists := data[tag]; !exists {
-				return false
-			}
-			//if reflect.TypeOf(data[tag]) != field.Type {
-			//	return false
-			//}
-		}
-	}
-	return true
-}
-
-func (nova *Nova) containsBinding(binding, rule string) bool {
-	if binding == "" {
-		return false
-	}
-	// split binding rules
-	for _, r := range nova.splitBindingRules(binding) {
-		if r == rule {
-			return true
-		}
-	}
-	return false
-}
-
-func (nova *Nova) splitBindingRules(binding string) []string {
-	var rules []string
-	start := 0
-	// check binding char
-	for i, char := range binding {
-		if char == ',' {
-			rules = append(rules, binding[start:i])
-			start = i + 1
-		}
-	}
-	// check binding length
-	if start < len(binding) {
-		rules = append(rules, binding[start:])
-	}
-	return rules
 }
 
 func (nova *Nova) isSingleChoiceQuestionExisted(id string) bool {

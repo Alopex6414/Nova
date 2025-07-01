@@ -173,9 +173,12 @@ func (nova *Nova) Start() {
 		// questionId related
 		novaService.POST("/question/Id", nova.HandleCreateQuestionId)
 		// question related
-		novaService.POST("/question/:Id", nova.HandleCreateQuestion)
+		novaService.POST("/question/single-choice/:Id", nova.HandleCreateQuestionSingleChoice)
+		novaService.DELETE("/question/single-choice/:Id", nova.HandleDeleteQuestionSingleChoice)
+		novaService.POST("/question/multiple-choice/:Id", nova.HandleCreateQuestionMultipleChoice)
+		novaService.POST("/question/judgement/:Id", nova.HandleCreateQuestionJudgement)
+		novaService.POST("/question/essay/:Id", nova.HandleCreateQuestionEssay)
 		novaService.PUT("/question/:Id", nova.HandleUpdateQuestion)
-		novaService.DELETE("/question/:Id", nova.HandleDeleteQuestion)
 		novaService.PATCH("/question/:Id", nova.HandleModifyQuestion)
 		novaService.GET("/question/:Id", nova.HandleQueryQuestion)
 	}

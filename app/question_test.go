@@ -30,9 +30,12 @@ func setupQuestionTestRouter() *gin.Engine {
 		// questionId related
 		novaService.POST("/question/Id", nova.HandleCreateQuestionId)
 		// question related
-		novaService.POST("/question/:Id", nova.HandleCreateQuestion)
+		novaService.POST("/question/single-choice/:Id", nova.HandleCreateQuestionSingleChoice)
+		novaService.DELETE("/question/single-choice/:Id", nova.HandleDeleteQuestionSingleChoice)
+		novaService.POST("/question/multiple-choice/:Id", nova.HandleCreateQuestionMultipleChoice)
+		novaService.POST("/question/judgement/:Id", nova.HandleCreateQuestionJudgement)
+		novaService.POST("/question/essay/:Id", nova.HandleCreateQuestionEssay)
 		novaService.PUT("/question/:Id", nova.HandleUpdateQuestion)
-		novaService.DELETE("/question/:Id", nova.HandleDeleteQuestion)
 		novaService.PATCH("/question/:Id", nova.HandleModifyQuestion)
 		novaService.GET("/question/:Id", nova.HandleQueryQuestion)
 	}
@@ -206,7 +209,7 @@ func TestNova_HandleCreateQuestionSingleChoice(t *testing.T) {
 	assert.Equal(t, "application/json", wQuestionId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(reQuestionId))
 	/* create question */
-	url = server.URL + "/nova/v1/question"
+	url = server.URL + "/nova/v1/question/single-choice"
 	question := QuestionSingleChoice{
 		Id:    reQuestionId,
 		Title: "What's the sweetest fruit?",
@@ -298,7 +301,7 @@ func BenchmarkNova_HandleCreateQuestionSingleChoice(b *testing.B) {
 		assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(reQuestionId))
 		/* create question */
-		url = server.URL + "/nova/v1/question"
+		url = server.URL + "/nova/v1/question/single-choice"
 		question := QuestionSingleChoice{
 			Id:    reQuestionId,
 			Title: "What's the sweetest fruit?",
@@ -392,7 +395,7 @@ func BenchmarkNova_HandleCreateQuestionSingleChoiceParallel(b *testing.B) {
 			assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(reQuestionId))
 			/* create question */
-			url = server.URL + "/nova/v1/question"
+			url = server.URL + "/nova/v1/question/single-choice"
 			question := QuestionSingleChoice{
 				Id:    reQuestionId,
 				Title: "What's the sweetest fruit?",
@@ -484,7 +487,7 @@ func TestNova_HandleCreateQuestionMultipleChoice(t *testing.T) {
 	assert.Equal(t, "application/json", wQuestionId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(reQuestionId))
 	/* create question */
-	url = server.URL + "/nova/v1/question"
+	url = server.URL + "/nova/v1/question/multiple-choice"
 	question := QuestionMultipleChoice{
 		Id:    reQuestionId,
 		Title: "What's the sweetest fruit?",
@@ -582,7 +585,7 @@ func BenchmarkNova_HandleCreateQuestionMultipleChoice(b *testing.B) {
 		assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(reQuestionId))
 		/* create question */
-		url = server.URL + "/nova/v1/question"
+		url = server.URL + "/nova/v1/question/multiple-choice"
 		question := QuestionMultipleChoice{
 			Id:    reQuestionId,
 			Title: "What's the sweetest fruit?",
@@ -682,7 +685,7 @@ func BenchmarkNova_HandleCreateQuestionMultipleChoiceParallel(b *testing.B) {
 			assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(reQuestionId))
 			/* create question */
-			url = server.URL + "/nova/v1/question"
+			url = server.URL + "/nova/v1/question/multiple-choice"
 			question := QuestionMultipleChoice{
 				Id:    reQuestionId,
 				Title: "What's the sweetest fruit?",
@@ -780,7 +783,7 @@ func TestNova_HandleCreateQuestionJudgement(t *testing.T) {
 	assert.Equal(t, "application/json", wQuestionId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(reQuestionId))
 	/* create question */
-	url = server.URL + "/nova/v1/question"
+	url = server.URL + "/nova/v1/question/judgement"
 	question := QuestionJudgement{
 		Id:             reQuestionId,
 		Title:          "What's the sweetest fruit?",
@@ -852,7 +855,7 @@ func BenchmarkNova_HandleCreateQuestionJudgement(b *testing.B) {
 		assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(reQuestionId))
 		/* create question */
-		url = server.URL + "/nova/v1/question"
+		url = server.URL + "/nova/v1/question/judgement"
 		question := QuestionJudgement{
 			Id:             reQuestionId,
 			Title:          "What's the sweetest fruit?",
@@ -926,7 +929,7 @@ func BenchmarkNova_HandleCreateQuestionJudgementParallel(b *testing.B) {
 			assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(reQuestionId))
 			/* create question */
-			url = server.URL + "/nova/v1/question"
+			url = server.URL + "/nova/v1/question/judgement"
 			question := QuestionJudgement{
 				Id:             reQuestionId,
 				Title:          "What's the sweetest fruit?",
@@ -998,7 +1001,7 @@ func TestNova_HandleCreateQuestionEssay(t *testing.T) {
 	assert.Equal(t, "application/json", wQuestionId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(reQuestionId))
 	/* create question */
-	url = server.URL + "/nova/v1/question"
+	url = server.URL + "/nova/v1/question/essay"
 	question := QuestionEssay{
 		Id:             reQuestionId,
 		Title:          "What's the sweetest fruit?",
@@ -1070,7 +1073,7 @@ func BenchmarkNova_HandleCreateQuestionEssay(b *testing.B) {
 		assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
 		assert.NoError(b, uuid.Validate(reQuestionId))
 		/* create question */
-		url = server.URL + "/nova/v1/question"
+		url = server.URL + "/nova/v1/question/essay"
 		question := QuestionEssay{
 			Id:             reQuestionId,
 			Title:          "What's the sweetest fruit?",
@@ -1144,7 +1147,7 @@ func BenchmarkNova_HandleCreateQuestionEssayParallel(b *testing.B) {
 			assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
 			assert.NoError(b, uuid.Validate(reQuestionId))
 			/* create question */
-			url = server.URL + "/nova/v1/question"
+			url = server.URL + "/nova/v1/question/essay"
 			question := QuestionEssay{
 				Id:             reQuestionId,
 				Title:          "What's the sweetest fruit?",
@@ -1218,7 +1221,7 @@ func TestNova_HandleDeleteQuestionSingleChoice(t *testing.T) {
 	assert.Equal(t, "application/json", wQuestionId.Header().Get("Content-Type"))
 	assert.NoError(t, uuid.Validate(reQuestionId))
 	/* create question */
-	url = server.URL + "/nova/v1/question"
+	url = server.URL + "/nova/v1/question/single-choice"
 	question := QuestionSingleChoice{
 		Id:    reQuestionId,
 		Title: "What's the sweetest fruit?",
@@ -1272,7 +1275,7 @@ func TestNova_HandleDeleteQuestionSingleChoice(t *testing.T) {
 	assert.Equal(t, question.StandardAnswer, resQuestion.StandardAnswer)
 	/* delete question */
 	// request content
-	url = server.URL + "/nova/v1/question"
+	url = server.URL + "/nova/v1/question/single-choice"
 	// request delete question
 	wDeleteQuestion := httptest.NewRecorder()
 	reqDeleteQuestion, err := http.NewRequest(http.MethodDelete, url+"/"+reQuestionId+"?type=single_choice", nil)

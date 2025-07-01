@@ -40,8 +40,8 @@ type QuestionMultipleChoice struct {
 type QuestionJudgement struct {
 	Id             string `json:"id" yaml:"id" binding:"required"`
 	Title          string `json:"title" yaml:"title" binding:"required"`
-	Answer         bool   `json:"answer" yaml:"answer" binding:"required"`
-	StandardAnswer bool   `json:"standard_answer" yaml:"standard_answer" binding:"required"`
+	Answer         bool   `json:"answer" yaml:"answer"`
+	StandardAnswer bool   `json:"standard_answer" yaml:"standard_answer"`
 }
 
 type QuestionEssay struct {
@@ -58,8 +58,4 @@ type QuestionTitle struct {
 type QuestionAnswer struct {
 	AnswerMark string `json:"answerMark" yaml:"answerMark" binding:"required"`
 	AnswerText string `json:"answerText" yaml:"answerText" binding:"required"`
-}
-
-type QuestionDeleteRequest struct {
-	Type string `form:"type" binding:"required"`
 }
