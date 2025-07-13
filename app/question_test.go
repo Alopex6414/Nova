@@ -2103,3 +2103,263 @@ func BenchmarkNova_HandleDeleteQuestionJudgementParallel(b *testing.B) {
 		}
 	})
 }
+
+func TestNova_HandleDeleteQuestionEssay(t *testing.T) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: TestNova_HandleDeleteQuestion (essay)
+	// Test Purpose: Test HandleDeleteQuestion delete question
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	// 3. send CreateQuestion request by using POST method
+	// 4. receive CreateQuestion response with created question by using 201 Created Code
+	// 5. send DeleteQuestion request with questionId by using DELETE method
+	// 6. receive DeleteQuestion request by using 204 No Content Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	/* create questionId */
+	// request content
+	url := server.URL + "/nova/v1/question/Id"
+	// request create questionId
+	wQuestionId := httptest.NewRecorder()
+	reqQuestionId, err := http.NewRequest(http.MethodPost, url, nil)
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	router.ServeHTTP(wQuestionId, reqQuestionId)
+	// return response
+	var reQuestionId string
+	err = json.Unmarshal(wQuestionId.Body.Bytes(), &reQuestionId)
+	if err != nil {
+		t.Errorf("error unmarshal response: %v", err)
+	}
+	// validate response
+	assert.Equal(t, http.StatusCreated, wQuestionId.Code)
+	assert.Equal(t, "application/json", wQuestionId.Header().Get("Content-Type"))
+	assert.NoError(t, uuid.Validate(reQuestionId))
+	/* create question */
+	url = server.URL + "/nova/v1/question/essay"
+	question := QuestionEssay{
+		Id:             reQuestionId,
+		Title:          "What's the sweetest fruit?",
+		Answer:         "apple",
+		StandardAnswer: "apple",
+	}
+	body, err := json.Marshal(question)
+	if err != nil {
+		t.Errorf("error marshal question: %v", err)
+	}
+	// request create user
+	wQuestion := httptest.NewRecorder()
+	reqQuestion, err := http.NewRequest(http.MethodPost, url+"/"+reQuestionId, bytes.NewReader(body))
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	reqQuestion.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(wQuestion, reqQuestion)
+	// return response
+	var resQuestion QuestionEssay
+	err = json.Unmarshal(wQuestion.Body.Bytes(), &resQuestion)
+	if err != nil {
+		t.Errorf("error unmarshal response: %v", err)
+	}
+	// validate response
+	assert.Equal(t, http.StatusCreated, wQuestion.Code)
+	assert.Equal(t, "application/json", wQuestion.Header().Get("Content-Type"))
+	assert.Equal(t, question.Id, resQuestion.Id)
+	assert.Equal(t, question.Title, resQuestion.Title)
+	assert.Equal(t, question.Answer, resQuestion.Answer)
+	assert.Equal(t, question.StandardAnswer, resQuestion.StandardAnswer)
+	/* delete question */
+	// request content
+	url = server.URL + "/nova/v1/question/essay"
+	// request delete question
+	wDeleteQuestion := httptest.NewRecorder()
+	reqDeleteQuestion, err := http.NewRequest(http.MethodDelete, url+"/"+reQuestionId, nil)
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	router.ServeHTTP(wDeleteQuestion, reqDeleteQuestion)
+	// validate response
+	assert.Equal(t, http.StatusNoContent, wDeleteQuestion.Code)
+}
+
+func BenchmarkNova_HandleDeleteQuestionEssay(b *testing.B) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleDeleteQuestionEssay (essay)
+	// Test Purpose: Benchmark HandleDeleteQuestion delete question
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	// 3. send CreateQuestion request by using POST method
+	// 4. receive CreateQuestion response with created question by using 201 Created Code
+	// 5. send DeleteQuestion request with questionId by using DELETE method
+	// 6. receive DeleteQuestion request by using 204 No Content Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		/* create questionId */
+		// request content
+		url := server.URL + "/nova/v1/question/Id"
+		// request create questionId
+		wQuestionId := httptest.NewRecorder()
+		reqQuestionId, err := http.NewRequest(http.MethodPost, url, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(wQuestionId, reqQuestionId)
+		// return response
+		var reQuestionId string
+		err = json.Unmarshal(wQuestionId.Body.Bytes(), &reQuestionId)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusCreated, wQuestionId.Code)
+		assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
+		assert.NoError(b, uuid.Validate(reQuestionId))
+		/* create question */
+		url = server.URL + "/nova/v1/question/essay"
+		question := QuestionEssay{
+			Id:             reQuestionId,
+			Title:          "What's the sweetest fruit?",
+			Answer:         "apple",
+			StandardAnswer: "apple",
+		}
+		body, err := json.Marshal(question)
+		if err != nil {
+			b.Errorf("error marshal question: %v", err)
+		}
+		// request create user
+		wQuestion := httptest.NewRecorder()
+		reqQuestion, err := http.NewRequest(http.MethodPost, url+"/"+reQuestionId, bytes.NewReader(body))
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		reqQuestion.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(wQuestion, reqQuestion)
+		// return response
+		var resQuestion QuestionEssay
+		err = json.Unmarshal(wQuestion.Body.Bytes(), &resQuestion)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusCreated, wQuestion.Code)
+		assert.Equal(b, "application/json", wQuestion.Header().Get("Content-Type"))
+		assert.Equal(b, question.Id, resQuestion.Id)
+		assert.Equal(b, question.Title, resQuestion.Title)
+		assert.Equal(b, question.Answer, resQuestion.Answer)
+		assert.Equal(b, question.StandardAnswer, resQuestion.StandardAnswer)
+		/* delete question */
+		// request content
+		url = server.URL + "/nova/v1/question/essay"
+		// request delete question
+		wDeleteQuestion := httptest.NewRecorder()
+		reqDeleteQuestion, err := http.NewRequest(http.MethodDelete, url+"/"+reQuestionId, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(wDeleteQuestion, reqDeleteQuestion)
+		// validate response
+		assert.Equal(b, http.StatusNoContent, wDeleteQuestion.Code)
+	}
+}
+
+func BenchmarkNova_HandleDeleteQuestionEssayParallel(b *testing.B) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: BenchmarkNova_HandleDeleteQuestionEssay (essay) (parallel)
+	// Test Purpose: Benchmark HandleDeleteQuestion delete question
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	// 3. send CreateQuestion request by using POST method
+	// 4. receive CreateQuestion response with created question by using 201 Created Code
+	// 5. send DeleteQuestion request with questionId by using DELETE method
+	// 6. receive DeleteQuestion request by using 204 No Content Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			/* create questionId */
+			// request content
+			url := server.URL + "/nova/v1/question/Id"
+			// request create questionId
+			wQuestionId := httptest.NewRecorder()
+			reqQuestionId, err := http.NewRequest(http.MethodPost, url, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(wQuestionId, reqQuestionId)
+			// return response
+			var reQuestionId string
+			err = json.Unmarshal(wQuestionId.Body.Bytes(), &reQuestionId)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusCreated, wQuestionId.Code)
+			assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
+			assert.NoError(b, uuid.Validate(reQuestionId))
+			/* create question */
+			url = server.URL + "/nova/v1/question/essay"
+			question := QuestionEssay{
+				Id:             reQuestionId,
+				Title:          "What's the sweetest fruit?",
+				Answer:         "apple",
+				StandardAnswer: "apple",
+			}
+			body, err := json.Marshal(question)
+			if err != nil {
+				b.Errorf("error marshal question: %v", err)
+			}
+			// request create user
+			wQuestion := httptest.NewRecorder()
+			reqQuestion, err := http.NewRequest(http.MethodPost, url+"/"+reQuestionId, bytes.NewReader(body))
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			reqQuestion.Header.Set("Content-Type", "application/json")
+			router.ServeHTTP(wQuestion, reqQuestion)
+			// return response
+			var resQuestion QuestionEssay
+			err = json.Unmarshal(wQuestion.Body.Bytes(), &resQuestion)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusCreated, wQuestion.Code)
+			assert.Equal(b, "application/json", wQuestion.Header().Get("Content-Type"))
+			assert.Equal(b, question.Id, resQuestion.Id)
+			assert.Equal(b, question.Title, resQuestion.Title)
+			assert.Equal(b, question.Answer, resQuestion.Answer)
+			assert.Equal(b, question.StandardAnswer, resQuestion.StandardAnswer)
+			/* delete question */
+			// request content
+			url = server.URL + "/nova/v1/question/essay"
+			// request delete question
+			wDeleteQuestion := httptest.NewRecorder()
+			reqDeleteQuestion, err := http.NewRequest(http.MethodDelete, url+"/"+reQuestionId, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(wDeleteQuestion, reqDeleteQuestion)
+			// validate response
+			assert.Equal(b, http.StatusNoContent, wDeleteQuestion.Code)
+		}
+	})
+}
