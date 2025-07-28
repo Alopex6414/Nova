@@ -174,16 +174,25 @@ func (nova *Nova) Start() {
 		novaService.POST("/question/Id", nova.HandleCreateQuestionId)
 		// question related
 		novaService.POST("/question/single-choice/:Id", nova.HandleCreateQuestionSingleChoice)
+		novaService.PUT("/question/single-choice/:Id", nova.HandleUpdateQuestionSingleChoice)
 		novaService.DELETE("/question/single-choice/:Id", nova.HandleDeleteQuestionSingleChoice)
+		novaService.PATCH("/question/single-choice/:Id", nova.HandleModifyQuestionSingleChoice)
+		novaService.GET("/question/single-choice/:Id", nova.HandleQueryQuestionSingleChoice)
 		novaService.POST("/question/multiple-choice/:Id", nova.HandleCreateQuestionMultipleChoice)
+		novaService.PUT("/question/multiple-choice/:Id", nova.HandleUpdateQuestionMultipleChoice)
 		novaService.DELETE("/question/multiple-choice/:Id", nova.HandleDeleteQuestionMultipleChoice)
+		novaService.PATCH("/question/multiple-choice/:Id", nova.HandleModifyQuestionMultipleChoice)
+		novaService.GET("/question/multiple-choice/:Id", nova.HandleQueryQuestionMultipleChoice)
 		novaService.POST("/question/judgement/:Id", nova.HandleCreateQuestionJudgement)
+		novaService.PUT("/question/judgement/:Id", nova.HandleUpdateQuestionJudgement)
 		novaService.DELETE("/question/judgement/:Id", nova.HandleDeleteQuestionJudgement)
+		novaService.PATCH("/question/judgement/:Id", nova.HandleModifyQuestionJudgement)
+		novaService.GET("/question/judgement/:Id", nova.HandleQueryQuestionJudgement)
 		novaService.POST("/question/essay/:Id", nova.HandleCreateQuestionEssay)
+		novaService.PUT("/question/essay/:Id", nova.HandleUpdateQuestionEssay)
 		novaService.DELETE("/question/essay/:Id", nova.HandleDeleteQuestionEssay)
-		novaService.PUT("/question/:Id", nova.HandleUpdateQuestion)
-		novaService.PATCH("/question/:Id", nova.HandleModifyQuestion)
-		novaService.GET("/question/:Id", nova.HandleQueryQuestion)
+		novaService.PATCH("/question/essay/:Id", nova.HandleModifyQuestionEssay)
+		novaService.GET("/question/essay/:Id", nova.HandleQueryQuestionEssay)
 	}
 	// enable tls settings
 	var tlsConfig *tls.Config

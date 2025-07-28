@@ -460,17 +460,47 @@ func (nova *Nova) HandleDeleteQuestionEssay(c *gin.Context) {
 	return
 }
 
-func (nova *Nova) HandleModifyQuestion(c *gin.Context) {
+func (nova *Nova) HandleModifyQuestionSingleChoice(c *gin.Context) {
 
 }
 
-func (nova *Nova) HandleQueryQuestion(c *gin.Context) {
+func (nova *Nova) HandleModifyQuestionMultipleChoice(c *gin.Context) {
 
 }
 
-func (nova *Nova) HandleUpdateQuestion(c *gin.Context) {
+func (nova *Nova) HandleModifyQuestionJudgement(c *gin.Context) {
 
 }
+
+func (nova *Nova) HandleModifyQuestionEssay(c *gin.Context) {
+
+}
+
+func (nova *Nova) HandleQueryQuestionSingleChoice(c *gin.Context) {
+
+}
+
+func (nova *Nova) HandleQueryQuestionMultipleChoice(c *gin.Context) {
+
+}
+
+func (nova *Nova) HandleQueryQuestionJudgement(c *gin.Context) {
+
+}
+
+func (nova *Nova) HandleQueryQuestionEssay(c *gin.Context) {
+
+}
+
+func (nova *Nova) HandleUpdateQuestionSingleChoice(c *gin.Context) {
+
+}
+
+func (nova *Nova) HandleUpdateQuestionMultipleChoice(c *gin.Context) {}
+
+func (nova *Nova) HandleUpdateQuestionJudgement(c *gin.Context) {}
+
+func (nova *Nova) HandleUpdateQuestionEssay(c *gin.Context) {}
 
 func (nova *Nova) isSingleChoiceQuestionExisted(id string) bool {
 	// enable single-choice question cache read lock
