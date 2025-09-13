@@ -678,8 +678,8 @@ func (nova *Nova) modifySingleChoiceQuestionInDataCache(question QuestionSingleC
 	for k, v := range nova.cache.questionsCache.singleChoiceCache.singleChoiceSet {
 		if v.Id == question.Id {
 			nova.cache.questionsCache.singleChoiceCache.singleChoiceSet[k] = question
+			return nova.cache.questionsCache.singleChoiceCache.singleChoiceSet[k], nil
 		}
-		return nova.cache.questionsCache.singleChoiceCache.singleChoiceSet[k], nil
 	}
 	return QuestionSingleChoice{}, errors.New("single choice question not found")
 }
