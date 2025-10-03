@@ -583,7 +583,64 @@ func (nova *Nova) HandleModifyQuestionMultipleChoice(c *gin.Context) {
 }
 
 func (nova *Nova) HandleModifyQuestionJudgement(c *gin.Context) {
-
+	// modify judgement question
+	var request QuestionJudgement
+	logger.Infof("handle request modify judgement question")
+	// request body should bind json
+	logger.Debugf("request body bind json format")
+	if err := c.ShouldBindJSON(&request); err != nil {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
+		return
+	}
+	logger.Debugf("successfully bind request json format")
+	// check request body correctness
+	logger.Debugf("check judgement question is validate")
+	b, err := nova.isJudgementQuestionValidate(request)
+	if !b {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error check judgement question is validate: %v", err)
+		return
+	}
+	logger.Debugf("successfully check judgement question is validate")
+	// update data cache by querying judgement questions in database
+	logger.Debugf("update data cache by querying judgement question in database")
+	err = nova.queryJudgementQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying judgement question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying judgement question in database")
+	// check judgement question existence
+	logger.Debugf("check judgement question is existed")
+	if !nova.isJudgementQuestionExisted(strings.ToLower(request.Id)) {
+		nova.response404NotFound(c, errors.New("judgement question not found"))
+		logger.Errorf("error check judgement question is existed: %v", err)
+		return
+	}
+	logger.Debugf("successfully check judgement question is existed")
+	// store modified judgement question in data cache
+	logger.Debugf("store modify judgement question in data cache")
+	response, err := nova.modifyJudgementQuestionInDataCache(request)
+	if err != nil {
+		nova.response404NotFound(c, err)
+		logger.Errorf("error store modify judgement question in data cache: %v", err)
+		return
+	}
+	logger.Debugf("successfully store modify judgement question in data cache")
+	// store modified judgement question in database
+	logger.Debugf("store modify judgement question in database")
+	if err = nova.modifyJudgementQuestionInDatabase(response.Id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error store modify judgement question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully store modify judgement question in database")
+	// return response
+	nova.response200OK(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusOK, response)
+	return
 }
 
 func (nova *Nova) HandleModifyQuestionEssay(c *gin.Context) {
@@ -1016,6 +1073,20 @@ func (nova *Nova) deleteJudgementQuestionInDataCache(id string) {
 	return
 }
 
+func (nova *Nova) modifyJudgementQuestionInDataCache(question QuestionJudgement) (QuestionJudgement, error) {
+	// enable judgement question cache write lock
+	nova.cache.questionsCache.judgementCache.mutex.Lock()
+	defer nova.cache.questionsCache.judgementCache.mutex.Unlock()
+	// replace judgement question in data cache
+	for k, v := range nova.cache.questionsCache.judgementCache.judgementSet {
+		if v.Id == question.Id {
+			nova.cache.questionsCache.judgementCache.judgementSet[k] = question
+			return nova.cache.questionsCache.judgementCache.judgementSet[k], nil
+		}
+	}
+	return QuestionJudgement{}, errors.New("judgement question not found")
+}
+
 func (nova *Nova) createJudgementQuestionInDatabase(id string) error {
 	// enable judgement question cache read lock
 	nova.cache.questionsCache.judgementCache.mutex.RLock()
@@ -1057,6 +1128,30 @@ func (nova *Nova) deleteJudgementQuestionInDatabase(id string) error {
 	}
 	// delete judgement question in database
 	if err := nova.db.DeleteQuestionJudgement(id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (nova *Nova) modifyJudgementQuestionInDatabase(id string) error {
+	// enable judgement question cache read lock
+	nova.cache.questionsCache.judgementCache.mutex.RLock()
+	defer nova.cache.questionsCache.judgementCache.mutex.RUnlock()
+	// search judgement question Id in data cache
+	b := false
+	question := QuestionJudgement{}
+	for _, v := range nova.cache.questionsCache.judgementCache.judgementSet {
+		if v.Id == id {
+			question = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("judgement question not found")
+	}
+	// update judgement question in database
+	if err := nova.db.UpdateQuestionJudgement(&question); err != nil {
 		return err
 	}
 	return nil
