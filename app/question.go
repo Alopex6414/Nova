@@ -644,7 +644,64 @@ func (nova *Nova) HandleModifyQuestionJudgement(c *gin.Context) {
 }
 
 func (nova *Nova) HandleModifyQuestionEssay(c *gin.Context) {
-
+	// modify essay question
+	var request QuestionEssay
+	logger.Infof("handle request modify essay question")
+	// request body should bind json
+	logger.Debugf("request body bind json format")
+	if err := c.ShouldBindJSON(&request); err != nil {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error bind request to json: %v", err)
+		return
+	}
+	logger.Debugf("successfully bind request json format")
+	// check request body correctness
+	logger.Debugf("check essay question is validate")
+	b, err := nova.isEssayQuestionValidate(request)
+	if !b {
+		nova.response400BadRequest(c, err)
+		logger.Errorf("error check essay question is validate: %v", err)
+		return
+	}
+	logger.Debugf("successfully check essay question is validate")
+	// update data cache by querying essay questions in database
+	logger.Debugf("update data cache by querying essay question in database")
+	err = nova.queryEssayQuestionsInDatabase()
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by essay judgement question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying essay question in database")
+	// check essay question existence
+	logger.Debugf("check essay question is existed")
+	if !nova.isEssayQuestionExisted(strings.ToLower(request.Id)) {
+		nova.response404NotFound(c, errors.New("essay question not found"))
+		logger.Errorf("error check essay question is existed: %v", err)
+		return
+	}
+	logger.Debugf("successfully check essay question is existed")
+	// store modified essay question in data cache
+	logger.Debugf("store modify essay question in data cache")
+	response, err := nova.modifyEssayQuestionInDataCache(request)
+	if err != nil {
+		nova.response404NotFound(c, err)
+		logger.Errorf("error store modify essay question in data cache: %v", err)
+		return
+	}
+	logger.Debugf("successfully store modify essay question in data cache")
+	// store modified essay question in database
+	logger.Debugf("store modify essay question in database")
+	if err = nova.modifyEssayQuestionInDatabase(response.Id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error store modify essay question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully store modify essay question in database")
+	// return response
+	nova.response200OK(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusOK, response)
+	return
 }
 
 func (nova *Nova) HandleQueryQuestionSingleChoice(c *gin.Context) {
@@ -1208,6 +1265,20 @@ func (nova *Nova) deleteEssayQuestionInDataCache(id string) {
 	return
 }
 
+func (nova *Nova) modifyEssayQuestionInDataCache(question QuestionEssay) (QuestionEssay, error) {
+	// enable essay question cache write lock
+	nova.cache.questionsCache.essayCache.mutex.Lock()
+	defer nova.cache.questionsCache.essayCache.mutex.Unlock()
+	// replace essay question in data cache
+	for k, v := range nova.cache.questionsCache.essayCache.essaySet {
+		if v.Id == question.Id {
+			nova.cache.questionsCache.essayCache.essaySet[k] = question
+			return nova.cache.questionsCache.essayCache.essaySet[k], nil
+		}
+	}
+	return QuestionEssay{}, errors.New("essay question not found")
+}
+
 func (nova *Nova) createEssayQuestionInDatabase(id string) error {
 	// enable essay question cache read lock
 	nova.cache.questionsCache.essayCache.mutex.RLock()
@@ -1249,6 +1320,30 @@ func (nova *Nova) deleteEssayQuestionInDatabase(id string) error {
 	}
 	// delete essay question in database
 	if err := nova.db.DeleteQuestionEssay(id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (nova *Nova) modifyEssayQuestionInDatabase(id string) error {
+	// enable essay question cache read lock
+	nova.cache.questionsCache.essayCache.mutex.RLock()
+	defer nova.cache.questionsCache.essayCache.mutex.RUnlock()
+	// search essay question Id in data cache
+	b := false
+	question := QuestionEssay{}
+	for _, v := range nova.cache.questionsCache.essayCache.essaySet {
+		if v.Id == id {
+			question = v
+			b = true
+			break
+		}
+	}
+	if !b {
+		return errors.New("essay question not found")
+	}
+	// update essay question in database
+	if err := nova.db.UpdateQuestionEssay(&question); err != nil {
 		return err
 	}
 	return nil
