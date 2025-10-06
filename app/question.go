@@ -758,7 +758,56 @@ func (nova *Nova) HandleQueryQuestionSingleChoice(c *gin.Context) {
 }
 
 func (nova *Nova) HandleQueryQuestionMultipleChoice(c *gin.Context) {
-
+	// query question multiple-choice
+	logger.Infof("handle request query multiple-choice question")
+	// extract questionId from uri
+	id := strings.ToLower(c.Param("Id"))
+	// request questionId correctness
+	logger.Debugf("check questionId is validate")
+	if b, _ := nova.isMultipleChoiceQuestionValidate(QuestionMultipleChoice{Id: id}); !b {
+		nova.response400BadRequest(c, errors.New("questionId format incorrect"))
+		logger.Errorf("error check questionId is validate")
+		return
+	}
+	logger.Debugf("successfully check questionId is validate")
+	// update data cache by querying multiple-choice questions in database
+	logger.Debugf("update data cache by querying multiple-choice questions in database")
+	err := nova.queryMultipleChoiceQuestionInDatabase(id)
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying multiple-choice questions in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying multiple-choice questions in database")
+	// check multiple-choice question existence
+	logger.Debugf("check multiple-choice question is existed")
+	if !nova.isMultipleChoiceQuestionExisted(id) {
+		nova.response404NotFound(c, errors.New("multiple-choice question not found"))
+		logger.Errorf("error check multiple-choice question is existed")
+		return
+	}
+	logger.Debugf("successfully check multiple-choice question is existed")
+	// query multiple-choice question from database
+	logger.Debugf("query multiple-choice question in database")
+	if err := nova.queryMultipleChoiceQuestionInDatabase(id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error query multiple-choice question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully query multiple-choice question in database")
+	// query multiple-choice question from data cache
+	logger.Debugf("query multiple-choice question in data cache")
+	response, err := nova.queryMultipleChoiceQuestionInDataCache(id)
+	if err != nil {
+		nova.response404NotFound(c, err)
+		logger.Errorf("error query multiple-choice question in data cache: %v", err)
+		return
+	}
+	logger.Debugf("successfully query multiple-choice question in data cache")
+	// return response
+	nova.response200OK(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusOK, response)
+	return
 }
 
 func (nova *Nova) HandleQueryQuestionJudgement(c *gin.Context) {
@@ -1071,6 +1120,19 @@ func (nova *Nova) modifyMultipleChoiceQuestionInDataCache(question QuestionMulti
 	return QuestionMultipleChoice{}, errors.New("multiple choice question not found")
 }
 
+func (nova *Nova) queryMultipleChoiceQuestionInDataCache(id string) (QuestionMultipleChoice, error) {
+	// enable multiple-choice question cache read lock
+	nova.cache.questionsCache.multipleChoiceCache.mutex.RLock()
+	defer nova.cache.questionsCache.multipleChoiceCache.mutex.RUnlock()
+	// search & query multiple-choice question from data cache
+	for k, v := range nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet {
+		if v.Id == id {
+			return nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet[k], nil
+		}
+	}
+	return QuestionMultipleChoice{}, errors.New("multiple-choice question not found")
+}
+
 func (nova *Nova) createMultipleChoiceQuestionInDatabase(id string) error {
 	// enable multiple-choice question cache read lock
 	nova.cache.questionsCache.multipleChoiceCache.mutex.RLock()
@@ -1137,6 +1199,25 @@ func (nova *Nova) modifyMultipleChoiceQuestionInDatabase(id string) error {
 	// update multiple choice question in database
 	if err := nova.db.UpdateQuestionMultipleChoice(&question); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (nova *Nova) queryMultipleChoiceQuestionInDatabase(id string) error {
+	// enable multiple-choice question cache write lock
+	nova.cache.questionsCache.multipleChoiceCache.mutex.Lock()
+	defer nova.cache.questionsCache.multipleChoiceCache.mutex.Unlock()
+	// query multiple-choice question from database
+	question, err := nova.db.QueryQuestionMultipleChoice(id)
+	if err != nil {
+		return err
+	}
+	// update multiple-choice question in data cache
+	for k, v := range nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet {
+		if v.Id == id {
+			nova.cache.questionsCache.multipleChoiceCache.multipleChoiceSet[k] = *question
+			break
+		}
 	}
 	return nil
 }
