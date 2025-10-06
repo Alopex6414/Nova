@@ -811,7 +811,56 @@ func (nova *Nova) HandleQueryQuestionMultipleChoice(c *gin.Context) {
 }
 
 func (nova *Nova) HandleQueryQuestionJudgement(c *gin.Context) {
-
+	// query question judgement
+	logger.Infof("handle request query judgement question")
+	// extract questionId from uri
+	id := strings.ToLower(c.Param("Id"))
+	// request questionId correctness
+	logger.Debugf("check questionId is validate")
+	if b, _ := nova.isJudgementQuestionValidate(QuestionJudgement{Id: id}); !b {
+		nova.response400BadRequest(c, errors.New("questionId format incorrect"))
+		logger.Errorf("error check questionId is validate")
+		return
+	}
+	logger.Debugf("successfully check questionId is validate")
+	// update data cache by querying judgement questions in database
+	logger.Debugf("update data cache by querying judgement questions in database")
+	err := nova.queryJudgementQuestionInDatabase(id)
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying judgement questions in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying judgement questions in database")
+	// check judgement question existence
+	logger.Debugf("check judgement question is existed")
+	if !nova.isJudgementQuestionExisted(id) {
+		nova.response404NotFound(c, errors.New("judgement question not found"))
+		logger.Errorf("error check judgement question is existed")
+		return
+	}
+	logger.Debugf("successfully check judgement question is existed")
+	// query judgement question from database
+	logger.Debugf("query judgement question in database")
+	if err := nova.queryJudgementQuestionInDatabase(id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error query judgement question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully query judgement question in database")
+	// query judgement question from data cache
+	logger.Debugf("query judgement question in data cache")
+	response, err := nova.queryJudgementQuestionInDataCache(id)
+	if err != nil {
+		nova.response404NotFound(c, err)
+		logger.Errorf("error query judgement question in data cache: %v", err)
+		return
+	}
+	logger.Debugf("successfully query judgement question in data cache")
+	// return response
+	nova.response200OK(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusOK, response)
+	return
 }
 
 func (nova *Nova) HandleQueryQuestionEssay(c *gin.Context) {
@@ -1287,6 +1336,19 @@ func (nova *Nova) modifyJudgementQuestionInDataCache(question QuestionJudgement)
 	return QuestionJudgement{}, errors.New("judgement question not found")
 }
 
+func (nova *Nova) queryJudgementQuestionInDataCache(id string) (QuestionJudgement, error) {
+	// enable judgement question cache read lock
+	nova.cache.questionsCache.judgementCache.mutex.RLock()
+	defer nova.cache.questionsCache.judgementCache.mutex.RUnlock()
+	// search & query judgement question from data cache
+	for k, v := range nova.cache.questionsCache.judgementCache.judgementSet {
+		if v.Id == id {
+			return nova.cache.questionsCache.judgementCache.judgementSet[k], nil
+		}
+	}
+	return QuestionJudgement{}, errors.New("judgement question not found")
+}
+
 func (nova *Nova) createJudgementQuestionInDatabase(id string) error {
 	// enable judgement question cache read lock
 	nova.cache.questionsCache.judgementCache.mutex.RLock()
@@ -1353,6 +1415,25 @@ func (nova *Nova) modifyJudgementQuestionInDatabase(id string) error {
 	// update judgement question in database
 	if err := nova.db.UpdateQuestionJudgement(&question); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (nova *Nova) queryJudgementQuestionInDatabase(id string) error {
+	// enable judgement question cache write lock
+	nova.cache.questionsCache.judgementCache.mutex.Lock()
+	defer nova.cache.questionsCache.judgementCache.mutex.Unlock()
+	// query judgement question from database
+	question, err := nova.db.QueryQuestionJudgement(id)
+	if err != nil {
+		return err
+	}
+	// update judgement question in data cache
+	for k, v := range nova.cache.questionsCache.judgementCache.judgementSet {
+		if v.Id == id {
+			nova.cache.questionsCache.judgementCache.judgementSet[k] = *question
+			break
+		}
 	}
 	return nil
 }
