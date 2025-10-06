@@ -864,7 +864,56 @@ func (nova *Nova) HandleQueryQuestionJudgement(c *gin.Context) {
 }
 
 func (nova *Nova) HandleQueryQuestionEssay(c *gin.Context) {
-
+	// query question essay
+	logger.Infof("handle request query essay question")
+	// extract questionId from uri
+	id := strings.ToLower(c.Param("Id"))
+	// request questionId correctness
+	logger.Debugf("check questionId is validate")
+	if b, _ := nova.isEssayQuestionValidate(QuestionEssay{Id: id}); !b {
+		nova.response400BadRequest(c, errors.New("questionId format incorrect"))
+		logger.Errorf("error check questionId is validate")
+		return
+	}
+	logger.Debugf("successfully check questionId is validate")
+	// update data cache by querying essay questions in database
+	logger.Debugf("update data cache by querying essay questions in database")
+	err := nova.queryEssayQuestionInDatabase(id)
+	if err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error update data cache by querying essay questions in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully update data cache by querying essay questions in database")
+	// check essay question existence
+	logger.Debugf("check essay question is existed")
+	if !nova.isEssayQuestionExisted(id) {
+		nova.response404NotFound(c, errors.New("essay question not found"))
+		logger.Errorf("error check essay question is existed")
+		return
+	}
+	logger.Debugf("successfully check essay question is existed")
+	// query essay question from database
+	logger.Debugf("query essay question in database")
+	if err := nova.queryEssayQuestionInDatabase(id); err != nil {
+		nova.response500InternalServerError(c, err)
+		logger.Errorf("error query essay question in database: %v", err)
+		return
+	}
+	logger.Debugf("successfully query essay question in database")
+	// query essay question from data cache
+	logger.Debugf("query essay question in data cache")
+	response, err := nova.queryEssayQuestionInDataCache(id)
+	if err != nil {
+		nova.response404NotFound(c, err)
+		logger.Errorf("error query essay question in data cache: %v", err)
+		return
+	}
+	logger.Debugf("successfully query essay question in data cache")
+	// return response
+	nova.response200OK(c, response)
+	logger.Infof("response status code: %v, body: %v", http.StatusOK, response)
+	return
 }
 
 func (nova *Nova) HandleUpdateQuestionSingleChoice(c *gin.Context) {
@@ -1503,6 +1552,19 @@ func (nova *Nova) modifyEssayQuestionInDataCache(question QuestionEssay) (Questi
 	return QuestionEssay{}, errors.New("essay question not found")
 }
 
+func (nova *Nova) queryEssayQuestionInDataCache(id string) (QuestionEssay, error) {
+	// enable essay question cache read lock
+	nova.cache.questionsCache.essayCache.mutex.RLock()
+	defer nova.cache.questionsCache.essayCache.mutex.RUnlock()
+	// search & query essay question from data cache
+	for k, v := range nova.cache.questionsCache.essayCache.essaySet {
+		if v.Id == id {
+			return nova.cache.questionsCache.essayCache.essaySet[k], nil
+		}
+	}
+	return QuestionEssay{}, errors.New("essay question not found")
+}
+
 func (nova *Nova) createEssayQuestionInDatabase(id string) error {
 	// enable essay question cache read lock
 	nova.cache.questionsCache.essayCache.mutex.RLock()
@@ -1569,6 +1631,25 @@ func (nova *Nova) modifyEssayQuestionInDatabase(id string) error {
 	// update essay question in database
 	if err := nova.db.UpdateQuestionEssay(&question); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (nova *Nova) queryEssayQuestionInDatabase(id string) error {
+	// enable essay question cache write lock
+	nova.cache.questionsCache.essayCache.mutex.Lock()
+	defer nova.cache.questionsCache.essayCache.mutex.Unlock()
+	// query essay question from database
+	question, err := nova.db.QueryQuestionEssay(id)
+	if err != nil {
+		return err
+	}
+	// update essay question in data cache
+	for k, v := range nova.cache.questionsCache.essayCache.essaySet {
+		if v.Id == id {
+			nova.cache.questionsCache.essayCache.essaySet[k] = *question
+			break
+		}
 	}
 	return nil
 }

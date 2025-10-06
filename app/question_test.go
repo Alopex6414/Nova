@@ -4915,3 +4915,96 @@ func BenchmarkNova_HandleQueryQuestionJudgementParallel(b *testing.B) {
 		}
 	})
 }
+
+func TestNova_HandleQueryQuestionEssay(t *testing.T) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: TestNova_HandleQueryQuestionEssay (essay)
+	// Test Purpose: Test HandleQueryQuestion essay question
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	// 3. send CreateQuestion request by using POST method
+	// 4. receive CreateQuestion response with created question by using 201 Created Code
+	// 5. send ModifyQuestion request with questionId by using PATCH method
+	// 6. receive ModifyQuestion request by using 200 No Content Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	/* create questionId */
+	// request content
+	url := server.URL + "/nova/v1/question/Id"
+	// request create questionId
+	wQuestionId := httptest.NewRecorder()
+	reqQuestionId, err := http.NewRequest(http.MethodPost, url, nil)
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	router.ServeHTTP(wQuestionId, reqQuestionId)
+	// return response
+	var reQuestionId string
+	err = json.Unmarshal(wQuestionId.Body.Bytes(), &reQuestionId)
+	if err != nil {
+		t.Errorf("error unmarshal response: %v", err)
+	}
+	// validate response
+	assert.Equal(t, http.StatusCreated, wQuestionId.Code)
+	assert.Equal(t, "application/json", wQuestionId.Header().Get("Content-Type"))
+	assert.NoError(t, uuid.Validate(reQuestionId))
+	/* create question */
+	url = server.URL + "/nova/v1/question/essay"
+	question := QuestionEssay{
+		Id:             reQuestionId,
+		Title:          "What's the sweetest fruit?",
+		Answer:         "apple",
+		StandardAnswer: "apple",
+	}
+	body, err := json.Marshal(question)
+	if err != nil {
+		t.Errorf("error marshal question: %v", err)
+	}
+	// request create user
+	wQuestion := httptest.NewRecorder()
+	reqQuestion, err := http.NewRequest(http.MethodPost, url+"/"+reQuestionId, bytes.NewReader(body))
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	reqQuestion.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(wQuestion, reqQuestion)
+	// return response
+	var resQuestion QuestionEssay
+	err = json.Unmarshal(wQuestion.Body.Bytes(), &resQuestion)
+	if err != nil {
+		t.Errorf("error unmarshal response: %v", err)
+	}
+	// validate response
+	assert.Equal(t, http.StatusCreated, wQuestion.Code)
+	assert.Equal(t, "application/json", wQuestion.Header().Get("Content-Type"))
+	assert.Equal(t, question.Id, resQuestion.Id)
+	assert.Equal(t, question.Title, resQuestion.Title)
+	assert.Equal(t, question.Answer, resQuestion.Answer)
+	assert.Equal(t, question.StandardAnswer, resQuestion.StandardAnswer)
+	/* query question */
+	// request content
+	url = server.URL + "/nova/v1/question/essay"
+	// request query question
+	wQueryQuestion := httptest.NewRecorder()
+	reqModifyQuestion, err := http.NewRequest(http.MethodGet, url+"/"+reQuestionId, nil)
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	reqModifyQuestion.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(wQueryQuestion, reqModifyQuestion)
+	// return response
+	var resQueryQuestion QuestionEssay
+	err = json.Unmarshal(wQueryQuestion.Body.Bytes(), &resQueryQuestion)
+	// validate response
+	assert.Equal(t, http.StatusOK, wQueryQuestion.Code)
+	assert.Equal(t, "application/json", wQueryQuestion.Header().Get("Content-Type"))
+	assert.Equal(t, question.Id, resQueryQuestion.Id)
+	assert.Equal(t, question.Title, resQueryQuestion.Title)
+	assert.Equal(t, question.Answer, resQueryQuestion.Answer)
+	assert.Equal(t, question.StandardAnswer, resQueryQuestion.StandardAnswer)
+}
