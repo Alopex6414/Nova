@@ -4382,3 +4382,249 @@ func TestNova_HandleQueryQuestionMultipleChoice(t *testing.T) {
 	assert.Equal(t, question.Answers, resQueryQuestion.Answers)
 	assert.Equal(t, question.StandardAnswers, resQueryQuestion.StandardAnswers)
 }
+
+func BenchmarkNova_HandleQueryQuestionMultipleChoice(b *testing.B) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: Benchmark Nova_HandleQueryQuestionMultipleChoice (multiple-choice)
+	// Test Purpose: Benchmark HandleQueryQuestion multiple-choice question
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	// 3. send CreateQuestion request by using POST method
+	// 4. receive CreateQuestion response with created question by using 201 Created Code
+	// 5. send ModifyQuestion request with questionId by using PATCH method
+	// 6. receive ModifyQuestion request by using 200 No Content Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		/* create questionId */
+		// request content
+		url := server.URL + "/nova/v1/question/Id"
+		// request create questionId
+		wQuestionId := httptest.NewRecorder()
+		reqQuestionId, err := http.NewRequest(http.MethodPost, url, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		router.ServeHTTP(wQuestionId, reqQuestionId)
+		// return response
+		var reQuestionId string
+		err = json.Unmarshal(wQuestionId.Body.Bytes(), &reQuestionId)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusCreated, wQuestionId.Code)
+		assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
+		assert.NoError(b, uuid.Validate(reQuestionId))
+		/* create question */
+		url = server.URL + "/nova/v1/question/multiple-choice"
+		question := QuestionMultipleChoice{
+			Id:    reQuestionId,
+			Title: "What's the sweetest fruit?",
+			Answers: []QuestionAnswer{
+				{
+					"A",
+					"apple",
+				},
+				{
+					"B",
+					"watermelon",
+				},
+				{
+					"C",
+					"orange",
+				},
+				{
+					"D",
+					"peach",
+				},
+			},
+			StandardAnswers: []QuestionAnswer{
+				{
+					"A",
+					"apple",
+				},
+				{
+					"B",
+					"watermelon",
+				},
+			},
+		}
+		body, err := json.Marshal(question)
+		if err != nil {
+			b.Errorf("error marshal question: %v", err)
+		}
+		// request create user
+		wQuestion := httptest.NewRecorder()
+		reqQuestion, err := http.NewRequest(http.MethodPost, url+"/"+reQuestionId, bytes.NewReader(body))
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		reqQuestion.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(wQuestion, reqQuestion)
+		// return response
+		var resQuestion QuestionMultipleChoice
+		err = json.Unmarshal(wQuestion.Body.Bytes(), &resQuestion)
+		if err != nil {
+			b.Errorf("error unmarshal response: %v", err)
+		}
+		// validate response
+		assert.Equal(b, http.StatusCreated, wQuestion.Code)
+		assert.Equal(b, "application/json", wQuestion.Header().Get("Content-Type"))
+		assert.Equal(b, question.Id, resQuestion.Id)
+		assert.Equal(b, question.Title, resQuestion.Title)
+		assert.Equal(b, question.Answers, resQuestion.Answers)
+		assert.Equal(b, question.StandardAnswers, resQuestion.StandardAnswers)
+		/* query question */
+		// request content
+		url = server.URL + "/nova/v1/question/multiple-choice"
+		// request query question
+		wQueryQuestion := httptest.NewRecorder()
+		reqModifyQuestion, err := http.NewRequest(http.MethodGet, url+"/"+reQuestionId, nil)
+		if err != nil {
+			b.Errorf("error creating request: %v", err)
+		}
+		reqModifyQuestion.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(wQueryQuestion, reqModifyQuestion)
+		// return response
+		var resQueryQuestion QuestionMultipleChoice
+		err = json.Unmarshal(wQueryQuestion.Body.Bytes(), &resQueryQuestion)
+		// validate response
+		assert.Equal(b, http.StatusOK, wQueryQuestion.Code)
+		assert.Equal(b, "application/json", wQueryQuestion.Header().Get("Content-Type"))
+		assert.Equal(b, question.Id, resQueryQuestion.Id)
+		assert.Equal(b, question.Title, resQueryQuestion.Title)
+		assert.Equal(b, question.Answers, resQueryQuestion.Answers)
+		assert.Equal(b, question.StandardAnswers, resQueryQuestion.StandardAnswers)
+	}
+}
+
+func BenchmarkNova_HandleQueryQuestionMultipleChoiceParallel(b *testing.B) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: Benchmark Nova_HandleQueryQuestionMultipleChoice (multiple-choice) (parallel)
+	// Test Purpose: Benchmark HandleQueryQuestion multiple-choice question
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	// 3. send CreateQuestion request by using POST method
+	// 4. receive CreateQuestion response with created question by using 201 Created Code
+	// 5. send ModifyQuestion request with questionId by using PATCH method
+	// 6. receive ModifyQuestion request by using 200 No Content Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			/* create questionId */
+			// request content
+			url := server.URL + "/nova/v1/question/Id"
+			// request create questionId
+			wQuestionId := httptest.NewRecorder()
+			reqQuestionId, err := http.NewRequest(http.MethodPost, url, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			router.ServeHTTP(wQuestionId, reqQuestionId)
+			// return response
+			var reQuestionId string
+			err = json.Unmarshal(wQuestionId.Body.Bytes(), &reQuestionId)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusCreated, wQuestionId.Code)
+			assert.Equal(b, "application/json", wQuestionId.Header().Get("Content-Type"))
+			assert.NoError(b, uuid.Validate(reQuestionId))
+			/* create question */
+			url = server.URL + "/nova/v1/question/multiple-choice"
+			question := QuestionMultipleChoice{
+				Id:    reQuestionId,
+				Title: "What's the sweetest fruit?",
+				Answers: []QuestionAnswer{
+					{
+						"A",
+						"apple",
+					},
+					{
+						"B",
+						"watermelon",
+					},
+					{
+						"C",
+						"orange",
+					},
+					{
+						"D",
+						"peach",
+					},
+				},
+				StandardAnswers: []QuestionAnswer{
+					{
+						"A",
+						"apple",
+					},
+					{
+						"B",
+						"watermelon",
+					},
+				},
+			}
+			body, err := json.Marshal(question)
+			if err != nil {
+				b.Errorf("error marshal question: %v", err)
+			}
+			// request create user
+			wQuestion := httptest.NewRecorder()
+			reqQuestion, err := http.NewRequest(http.MethodPost, url+"/"+reQuestionId, bytes.NewReader(body))
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			reqQuestion.Header.Set("Content-Type", "application/json")
+			router.ServeHTTP(wQuestion, reqQuestion)
+			// return response
+			var resQuestion QuestionMultipleChoice
+			err = json.Unmarshal(wQuestion.Body.Bytes(), &resQuestion)
+			if err != nil {
+				b.Errorf("error unmarshal response: %v", err)
+			}
+			// validate response
+			assert.Equal(b, http.StatusCreated, wQuestion.Code)
+			assert.Equal(b, "application/json", wQuestion.Header().Get("Content-Type"))
+			assert.Equal(b, question.Id, resQuestion.Id)
+			assert.Equal(b, question.Title, resQuestion.Title)
+			assert.Equal(b, question.Answers, resQuestion.Answers)
+			assert.Equal(b, question.StandardAnswers, resQuestion.StandardAnswers)
+			/* query question */
+			// request content
+			url = server.URL + "/nova/v1/question/multiple-choice"
+			// request query question
+			wQueryQuestion := httptest.NewRecorder()
+			reqModifyQuestion, err := http.NewRequest(http.MethodGet, url+"/"+reQuestionId, nil)
+			if err != nil {
+				b.Errorf("error creating request: %v", err)
+			}
+			reqModifyQuestion.Header.Set("Content-Type", "application/json")
+			router.ServeHTTP(wQueryQuestion, reqModifyQuestion)
+			// return response
+			var resQueryQuestion QuestionMultipleChoice
+			err = json.Unmarshal(wQueryQuestion.Body.Bytes(), &resQueryQuestion)
+			// validate response
+			assert.Equal(b, http.StatusOK, wQueryQuestion.Code)
+			assert.Equal(b, "application/json", wQueryQuestion.Header().Get("Content-Type"))
+			assert.Equal(b, question.Id, resQueryQuestion.Id)
+			assert.Equal(b, question.Title, resQueryQuestion.Title)
+			assert.Equal(b, question.Answers, resQueryQuestion.Answers)
+			assert.Equal(b, question.StandardAnswers, resQueryQuestion.StandardAnswers)
+		}
+	})
+}
