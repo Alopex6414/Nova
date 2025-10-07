@@ -3926,8 +3926,8 @@ func TestNova_HandleQueryQuestionSingleChoice(t *testing.T) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4039,8 +4039,8 @@ func BenchmarkNova_HandleQueryQuestionSingleChoice(b *testing.B) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4155,8 +4155,8 @@ func BenchmarkNova_HandleQueryQuestionSingleChoiceParallel(b *testing.B) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4273,8 +4273,8 @@ func TestNova_HandleQueryQuestionMultipleChoice(t *testing.T) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4392,8 +4392,8 @@ func BenchmarkNova_HandleQueryQuestionMultipleChoice(b *testing.B) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4514,8 +4514,8 @@ func BenchmarkNova_HandleQueryQuestionMultipleChoiceParallel(b *testing.B) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4638,8 +4638,8 @@ func TestNova_HandleQueryQuestionJudgement(t *testing.T) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4731,8 +4731,8 @@ func BenchmarkNova_HandleQueryQuestionJudgement(b *testing.B) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4827,8 +4827,8 @@ func BenchmarkNova_HandleQueryQuestionJudgementParallel(b *testing.B) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -4925,8 +4925,8 @@ func TestNova_HandleQueryQuestionEssay(t *testing.T) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -5018,8 +5018,8 @@ func BenchmarkNova_HandleQueryQuestionEssay(b *testing.B) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -5114,8 +5114,8 @@ func BenchmarkNova_HandleQueryQuestionEssayParallel(b *testing.B) {
 	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
 	// 3. send CreateQuestion request by using POST method
 	// 4. receive CreateQuestion response with created question by using 201 Created Code
-	// 5. send ModifyQuestion request with questionId by using PATCH method
-	// 6. receive ModifyQuestion request by using 200 No Content Code
+	// 5. send QueryQuestion request with questionId by using GET method
+	// 6. receive QueryQuestion request by using 200 No Content Code
 	-----------------------------------------------------------------------------------------*/
 	// reset test case
 	_ = resetQuestionTestCase()
@@ -5201,4 +5201,147 @@ func BenchmarkNova_HandleQueryQuestionEssayParallel(b *testing.B) {
 			assert.Equal(b, question.StandardAnswer, resQueryQuestion.StandardAnswer)
 		}
 	})
+}
+
+func TestNova_HandleUpdateQuestionSingleChoice(t *testing.T) {
+	/*---------------------------------------------------------------------------------------
+	// Test Case: TestNova_HandleUpdateQuestionSingleChoice (single-choice)
+	// Test Purpose: Test HandleUpdateQuestion update question
+	// Test Steps:
+	// 1. send CreateQuestionId request by using POST method
+	// 2. receive CreateQuestionId response with created questionId by using 201 Created Code
+	// 3. send CreateQuestion request by using POST method
+	// 4. receive CreateQuestion response with created question by using 201 Created Code
+	// 5. send UpdateQuestion request with questionId by using PUT method
+	// 6. receive UpdateQuestion request by using 200 No Content Code
+	-----------------------------------------------------------------------------------------*/
+	// reset test case
+	_ = resetQuestionTestCase()
+	// start http test service
+	server, router := startQuestionTestService()
+	defer server.Close()
+	/* create questionId */
+	// request content
+	url := server.URL + "/nova/v1/question/Id"
+	// request create questionId
+	wQuestionId := httptest.NewRecorder()
+	reqQuestionId, err := http.NewRequest(http.MethodPost, url, nil)
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	router.ServeHTTP(wQuestionId, reqQuestionId)
+	// return response
+	var reQuestionId string
+	err = json.Unmarshal(wQuestionId.Body.Bytes(), &reQuestionId)
+	if err != nil {
+		t.Errorf("error unmarshal response: %v", err)
+	}
+	// validate response
+	assert.Equal(t, http.StatusCreated, wQuestionId.Code)
+	assert.Equal(t, "application/json", wQuestionId.Header().Get("Content-Type"))
+	assert.NoError(t, uuid.Validate(reQuestionId))
+	/* create question */
+	url = server.URL + "/nova/v1/question/single-choice"
+	question := QuestionSingleChoice{
+		Id:    reQuestionId,
+		Title: "What's the sweetest fruit?",
+		Answers: []QuestionAnswer{
+			QuestionAnswer{
+				"A",
+				"apple",
+			},
+			QuestionAnswer{
+				"B",
+				"watermelon",
+			},
+			QuestionAnswer{
+				"C",
+				"orange",
+			},
+			QuestionAnswer{
+				"D",
+				"peach",
+			},
+		},
+		StandardAnswer: QuestionAnswer{
+			"B",
+			"watermelon",
+		},
+	}
+	body, err := json.Marshal(question)
+	if err != nil {
+		t.Errorf("error marshal question: %v", err)
+	}
+	// request create user
+	wQuestion := httptest.NewRecorder()
+	reqQuestion, err := http.NewRequest(http.MethodPost, url+"/"+reQuestionId, bytes.NewReader(body))
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	reqQuestion.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(wQuestion, reqQuestion)
+	// return response
+	var resQuestion QuestionSingleChoice
+	err = json.Unmarshal(wQuestion.Body.Bytes(), &resQuestion)
+	if err != nil {
+		t.Errorf("error unmarshal response: %v", err)
+	}
+	// validate response
+	assert.Equal(t, http.StatusCreated, wQuestion.Code)
+	assert.Equal(t, "application/json", wQuestion.Header().Get("Content-Type"))
+	assert.Equal(t, question.Id, resQuestion.Id)
+	assert.Equal(t, question.Title, resQuestion.Title)
+	assert.Equal(t, question.Answers, resQuestion.Answers)
+	assert.Equal(t, question.StandardAnswer, resQuestion.StandardAnswer)
+	/* update question */
+	// request content
+	url = server.URL + "/nova/v1/question/single-choice"
+	questionNew := QuestionSingleChoice{
+		Id:    reQuestionId,
+		Title: "Which city is the most one you favorite?",
+		Answers: []QuestionAnswer{
+			QuestionAnswer{
+				"A",
+				"New York",
+			},
+			QuestionAnswer{
+				"B",
+				"London",
+			},
+			QuestionAnswer{
+				"C",
+				"Paris",
+			},
+			QuestionAnswer{
+				"D",
+				"Beijing",
+			},
+		},
+		StandardAnswer: QuestionAnswer{
+			"D",
+			"Beijing",
+		},
+	}
+	bodyNew, err := json.Marshal(questionNew)
+	if err != nil {
+		t.Errorf("error marshal question: %v", err)
+	}
+	// request modify question
+	wModifyQuestion := httptest.NewRecorder()
+	reqModifyQuestion, err := http.NewRequest(http.MethodPut, url+"/"+reQuestionId, bytes.NewReader(bodyNew))
+	if err != nil {
+		t.Errorf("error creating request: %v", err)
+	}
+	reqModifyQuestion.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(wModifyQuestion, reqModifyQuestion)
+	// return response
+	var resModifyQuestion QuestionSingleChoice
+	err = json.Unmarshal(wModifyQuestion.Body.Bytes(), &resModifyQuestion)
+	// validate response
+	assert.Equal(t, http.StatusOK, wModifyQuestion.Code)
+	assert.Equal(t, "application/json", wModifyQuestion.Header().Get("Content-Type"))
+	assert.Equal(t, questionNew.Id, resModifyQuestion.Id)
+	assert.Equal(t, questionNew.Title, resModifyQuestion.Title)
+	assert.Equal(t, questionNew.Answers, resModifyQuestion.Answers)
+	assert.Equal(t, questionNew.StandardAnswer, resModifyQuestion.StandardAnswer)
 }
